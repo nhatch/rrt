@@ -1,6 +1,8 @@
 
 An implementation of RRTs / collision detection in C++. The "robot" is a simple planar stick. Supports polygonal obstacles and animates the final solution.
 
+![alt text](rrt.png "Demo screenshot")
+
 ## Usage
 
 ```
