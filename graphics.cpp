@@ -6,7 +6,7 @@
 #include "config.h"
 #include "rrt.h"
 #include "collision.h"
-#include "rrt_graphics.h"
+#include "graphics.h"
 
 const int WINDOW_SIDE = 500;
 sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE, WINDOW_SIDE), "RRT visualization");
@@ -15,13 +15,16 @@ static const double offset_y = double(WINDOW_SIDE) / 2;
 static const double scale_x = double(WINDOW_SIDE) / (MAX_X - MIN_X);
 static const double scale_y = double(WINDOW_SIDE) / -(MAX_Y - MIN_Y);
 
-sf::Vector2f toVector(double x, double y) {
-  return sf::Vector2f(x*scale_x + offset_x, y*scale_y + offset_y);
+sf::Vector2f toVector(const point2d_t &p) {
+  return sf::Vector2f(p[0]*scale_x + offset_x, p[1]*scale_y + offset_y);
+}
+
+sf::Vector2f toVector(const Config &c) {
+  return sf::Vector2f(c.x*scale_x + offset_x, c.y*scale_y + offset_y);
 }
 
 sf::Vertex toVertex(const TreeNode *node, bool child = false) {
-  Config c = node->config;
-  sf::Vector2f point = toVector(c.x, c.y);
+  sf::Vector2f point = toVector(node->config);
   if (child) {
     return sf::Vertex(point, sf::Color::White);
   } else {
@@ -30,7 +33,7 @@ sf::Vertex toVertex(const TreeNode *node, bool child = false) {
 }
 
 sf::Vertex toVertex(point2d_t p, bool child = false) {
-  sf::Vector2f point = toVector(p[0], p[1]);
+  sf::Vector2f point = toVector(p);
   if (child) {
     return sf::Vertex(point, sf::Color::White);
   } else {
@@ -54,13 +57,13 @@ void clear() {
 }
 
 void drawConfig(const Config &config, sf::Color color = sf::Color::Green) {
-  balls_t balls = getBalls(config);
+  balls_t balls = config.getBalls();
 
   for (point2d_t ball : balls) {
     double pixelRadius = BALL_RADIUS * scale_x;
     sf::CircleShape circle(pixelRadius);
     circle.setFillColor(color);
-    sf::Vector2f pos = toVector(ball[0], ball[1]);
+    sf::Vector2f pos = toVector(ball);
     pos.x -= pixelRadius;
     pos.y -= pixelRadius;
     circle.setPosition(pos);
@@ -84,8 +87,7 @@ void drawTask(const task_t &task) {
     shape.setPointCount(obs.size());
     shape.setFillColor(sf::Color::Black);
     for (size_t i = 0; i < obs.size(); i++) {
-      point2d_t p = obs[i];
-      shape.setPoint(i, toVector(p[0], p[1]));
+      shape.setPoint(i, toVector(obs[i]));
     }
     window.draw(shape);
   }
@@ -98,14 +100,14 @@ void animate(const Config &c, const task_t &task) {
 void animate(const Config &c0, const Config &c1,
     const Config &start, const Config &end, const task_t &task, const tree_t *tree,
     double moveRate, double secsPerFrame) {
-  double d = configDist(c0, c1);
+  double d = c0.distanceFrom(c1);
   int n_movement_frames = d/moveRate + 1;
-  Config line = configDiff(c1, c0);
+  Config line = c1 - c0;
 
   struct timeval tp0, tp1;
   for (int i=0; i < n_movement_frames; i++) {
     gettimeofday(&tp0, NULL);
-    Config current = linComb(c0, line, double(i)/n_movement_frames);
+    Config current = c0 + line * (double(i)/n_movement_frames);
     clear();
     if (tree)
       drawTree(*tree, task, false);

@@ -7,19 +7,6 @@
  * with a bunch of balls and checking each ball for collisions at
  * small intervals along the trajectory. */
 
-balls_t getBalls(const Config &c) {
-  balls_t r;
-  double cos_theta = cos(c.theta);
-  double sin_theta = sin(c.theta);
-  r[0] = {c.x - LENGTH * 0.5 * cos_theta,
-          c.y - LENGTH * 0.5 * sin_theta};
-  for (size_t i = 1; i < N_BALLS; i++) {
-    r[i][0] = r[i-1][0] + cos_theta*BALL_RADIUS;
-    r[i][1] = r[i-1][1] + sin_theta*BALL_RADIUS;
-  }
-  return r;
-}
-
 bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1) {
   // TODO Precalculate offset and normal
   point2d_t normal {p0[1] - p1[1], p1[0] - p0[0]};
@@ -32,7 +19,7 @@ bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1) {
 }
 
 bool collides(const Config &config, const task_t &task) {
-  balls_t balls = getBalls(config);
+  balls_t balls = config.getBalls();
   for (obstacle_t obs : task) {
     for (point2d_t ball : balls) {
       bool possibleCollision = true;
@@ -50,8 +37,8 @@ bool collides(const Config &config, const task_t &task) {
 }
 
 Config maxConfig(const Config &c0, const Config &c1, const task_t &task) {
-  double d = configDist(c0, c1);
-  Config line = configDiff(c1, c0);
+  double d = c0.distanceFrom(c1);
+  Config line = c1 - c0;
   // Given a non-colliding configuration (with some margin BALL_RADIUS),
   // the maximum distance (in configuration space)
   // that we can travel while remaining sure we're still non-colliding.
@@ -61,7 +48,7 @@ Config maxConfig(const Config &c0, const Config &c1, const task_t &task) {
   int n_frames = d/rate + 1; // Take the ceiling to be safe
   Config current = c0;
   for (int i=1; i < n_frames+1; i++) {
-    Config next = linComb(c0, line, double(i)/n_frames);
+    Config next = c0 + line * (double(i)/n_frames);
     if (collides(next, task))
       return current;
     current = next;

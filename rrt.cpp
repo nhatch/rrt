@@ -6,20 +6,20 @@
 #include "config.h"
 #include "rrt.h"
 #include "collision.h"
-#include "rrt_graphics.h"
+#include "graphics.h"
 
 void traceParents(const TreeNode *leaf) {
   while (leaf->parent != nullptr) {
-    printConfig(leaf->config);
+    std::cout << leaf->config;
     leaf = leaf->parent;
   }
-  printConfig(leaf->config);
+  std::cout << leaf->config;
 }
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
 double minDistance(const TreeNode *node, const Config &config) {
-  return configDist(node->config, config);
+  return config.distanceFrom(node->config);
 }
 
 /* Uses split nodes. */
@@ -28,29 +28,29 @@ double minDistance(const TreeNode *node, const Config &config,
     bool *needsSplitNode, Config *splitConfig) {
   const Config &c0 = node->parent->config;
   const Config &c1 = node->config;
-  Config line = configDiff(c1, c0);
-  /* TODO: The number used for theta here might be off by a multiple of 2*pi
+  Config line = c1 - c0;
+  /* TODO: The number used for config.theta here might be off by a multiple of 2*pi
    * from the number that would give the optimal distance.
    * I don't really understand how to solve the minimum distance problem on a torus. */
-  Config targetDiff = configDiff(config, c0);
-  double alpha = innerProduct(line, targetDiff) / innerProduct(line, line);
+  Config targetDiff = config - c0;
+  double alpha = line * targetDiff / (line * line); // TODO precedence?
   if (alpha <= 0. || alpha >= 1.) {
     *needsSplitNode = false;
-    return configDist(c1, config);
+    return config.distanceFrom(c1);
   } else {
     *needsSplitNode = true;
-    *splitConfig = linComb(c0, line, alpha);
-    return configDist(*splitConfig, config);
+    *splitConfig = c0 + line * alpha;
+    return config.distanceFrom(*splitConfig);
   }
 }
 
 TreeNode *insert(tree_t &tree, const Config &config, const task_t &task) {
   TreeNode *existingNode = tree[0]; // root node
-  double min_dist = configDist(existingNode->config, config);
+  double min_dist = config.distanceFrom(existingNode->config);
   bool needsSplitNode = false;
   bool bestNeedsSplitNode = false;
-  Config splitConfig = {0., 0., 0.};
-  Config bestSplitConfig = {0., 0., 0.};
+  Config splitConfig {0., 0., 0.};
+  Config bestSplitConfig {0., 0., 0.};
 
   for (TreeNode *node : tree) {
     if (!node->parent)
@@ -79,12 +79,12 @@ TreeNode *insert(tree_t &tree, const Config &config, const task_t &task) {
 TreeNode *search(const Config &start, tree_t &tree, const task_t &task, double tol=0.001) {
   TreeNode *current = tree[0];
   int iter = 0;
-  while (configDist(current->config, start) > tol) {
+  while (start.distanceFrom(current->config) > tol) {
     Config c;
     if (++iter % 100 == 0) {
       c = start;
     } else {
-      c = randConfig();
+      c = Config::randConfig();
     }
     current = insert(tree, c, task);
     drawTree(tree, task);
@@ -115,6 +115,7 @@ int main() {
   tree_t tree {root};
   TreeNode *path = search(start, tree, task);
   animatePath(path, start, end, task, tree);
+  traceParents(path);
 
   destroyTree(&tree);
   return 0;

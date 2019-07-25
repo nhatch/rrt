@@ -1,6 +1,6 @@
 CC=g++
 CFLAGS=-pedantic-errors -Wall -Weffc++ -Wextra -Wsign-conversion
-DEPS=rrt.o rrt_graphics.o config.o collision.o
+DEPS=config.o rrt.o collision.o graphics.o
 
 target: $(DEPS)
 	$(CC) $(DEPS) -lsfml-graphics -lsfml-window -lsfml-system
