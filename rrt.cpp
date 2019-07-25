@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <limits>
 #include <ctime>
 #include <math.h>
@@ -99,10 +100,14 @@ void destroyTree(tree_t *tree) {
   tree->clear();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   std::cout.precision(2);
   std::cout << std::fixed;
-  unsigned int seed = std::time(nullptr);
+  unsigned int seed = std::time(nullptr) % 100000;
+  if (argc > 1) {
+    std::istringstream ss {argv[1]};
+    ss >> seed;
+  }
   std::cout << "Seed: " << seed << '\n';
   std::srand(seed);
 
