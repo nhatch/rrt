@@ -44,7 +44,7 @@ double minDistance(const TreeNode *node, const Config &config,
   }
 }
 
-TreeNode *insert(tree_t &tree, const Config &config, const task_t &task) {
+TreeNode *insert(tree_t &tree, const Config &config, const Task &task) {
   TreeNode *existingNode = tree[0]; // root node
   double min_dist = config.distanceFrom(existingNode->config);
   bool needsSplitNode = false;
@@ -76,7 +76,7 @@ TreeNode *insert(tree_t &tree, const Config &config, const task_t &task) {
   return leafNode;
 }
 
-TreeNode *search(const Config &start, tree_t &tree, const task_t &task, double tol=0.001) {
+TreeNode *search(const Config &start, tree_t &tree, const Task &task, double tol=0.001) {
   TreeNode *current = tree[0];
   int iter = 0;
   while (start.distanceFrom(current->config) > tol) {
@@ -107,15 +107,14 @@ int main() {
   std::srand(seed);
 
   // Give the vertices in clockwise order
-  obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
-  obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
-  task_t task {obs1, obs2};
-  Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
+  const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
+  const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
+  const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
+  Task task {start, end, {obs1, obs2}};
   TreeNode *root = new TreeNode {nullptr, end};
   tree_t tree {root};
   TreeNode *path = search(start, tree, task);
-  animatePath(path, start, end, task, tree);
-  traceParents(path);
+  animatePath(path, task, tree);
 
   destroyTree(&tree);
   return 0;

@@ -5,11 +5,8 @@
 #include "rrt.h"
 #include "collision.h"
 
-void drawTree(const tree_t &tree, const task_t &task, bool render = true);
-void animate(const Config &c0, const task_t &task);
-void animate(const Config &c0, const Config &c1,
-    const Config &start, const Config &end, const task_t &task, const tree_t *tree,
-    double moveRate=0.005, double secsPerFrame=0.01);
-void animatePath(const TreeNode *path, const Config &start, const Config &end, const task_t &task, const tree_t &tree);
+void drawTree(const tree_t &tree, const Task &task);
+void animatePath(const TreeNode *path, const Task &task, const tree_t &tree,
+    double movementPerFrame=0.01, double secsPerFrame=0.01);
 
 #endif

@@ -1,6 +1,7 @@
 
 #include <math.h>
 #include "config.h"
+#include "rrt.h"
 #include "collision.h"
 
 /* We check for collisions along a trajectory by covering the stick
@@ -18,9 +19,9 @@ bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1) {
   return (iprod - offset > BALL_RADIUS);
 }
 
-bool collides(const Config &config, const task_t &task) {
+bool collides(const Config &config, const Task &task) {
   balls_t balls = config.getBalls();
-  for (obstacle_t obs : task) {
+  for (obstacle_t obs : task.obstacles) {
     for (point2d_t ball : balls) {
       bool possibleCollision = true;
       for (size_t i = 0; possibleCollision && i < obs.size(); i++) {
@@ -36,7 +37,7 @@ bool collides(const Config &config, const task_t &task) {
   return false;
 }
 
-Config maxConfig(const Config &c0, const Config &c1, const task_t &task) {
+Config maxConfig(const Config &c0, const Config &c1, const Task &task) {
   double d = c0.distanceFrom(c1);
   Config line = c1 - c0;
   // Given a non-colliding configuration (with some margin BALL_RADIUS),

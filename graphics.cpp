@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <ctime>
 #include <unistd.h>
+
 #include "config.h"
 #include "rrt.h"
 #include "collision.h"
@@ -10,10 +11,10 @@
 
 const int WINDOW_SIDE = 500;
 sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE, WINDOW_SIDE), "RRT visualization");
-static const double offset_x = double(WINDOW_SIDE) / 2;
-static const double offset_y = double(WINDOW_SIDE) / 2;
-static const double scale_x = double(WINDOW_SIDE) / (MAX_X - MIN_X);
-static const double scale_y = double(WINDOW_SIDE) / -(MAX_Y - MIN_Y);
+const double offset_x = double(WINDOW_SIDE) / 2;
+const double offset_y = double(WINDOW_SIDE) / 2;
+const double scale_x = double(WINDOW_SIDE) / (MAX_X - MIN_X);
+const double scale_y = double(WINDOW_SIDE) / -(MAX_Y - MIN_Y);
 
 sf::Vector2f toVector(const point2d_t &p) {
   return sf::Vector2f(p[0]*scale_x + offset_x, p[1]*scale_y + offset_y);
@@ -23,22 +24,12 @@ sf::Vector2f toVector(const Config &c) {
   return sf::Vector2f(c.x*scale_x + offset_x, c.y*scale_y + offset_y);
 }
 
-sf::Vertex toVertex(const TreeNode *node, bool child = false) {
-  sf::Vector2f point = toVector(node->config);
-  if (child) {
-    return sf::Vertex(point, sf::Color::White);
-  } else {
-    return sf::Vertex(point, sf::Color::Black);
-  }
-}
-
-sf::Vertex toVertex(point2d_t p, bool child = false) {
-  sf::Vector2f point = toVector(p);
-  if (child) {
-    return sf::Vertex(point, sf::Color::White);
-  } else {
-    return sf::Vertex(point, sf::Color::Black);
-  }
+template <class T>
+void drawLine(T p0, T p1) {
+  sf::Vertex line[2];
+  line[0] = sf::Vertex(toVector(p0), sf::Color::Black);
+  line[1] = sf::Vertex(toVector(p1), sf::Color::White);
+  window.draw(line, 2, sf::Lines);
 }
 
 void clear() {
@@ -48,7 +39,6 @@ void clear() {
   sf::Event event;
   while (window.pollEvent(event))
   {
-    // "close requested" event: we close the window
     if (event.type == sf::Event::Closed)
         window.close();
   }
@@ -70,19 +60,13 @@ void drawConfig(const Config &config, sf::Color color = sf::Color::Green) {
     window.draw(circle);
   }
 
-  sf::Vertex line[] = {toVertex(balls[0]), toVertex(balls[N_BALLS-1], true)};
-  window.draw(line, 2, sf::Lines);
+  drawLine(balls[0], balls[N_BALLS-1]);
 }
 
-void animatePath(const TreeNode *path, const Config &start, const Config &end, const task_t &task, const tree_t &tree) {
-  while (path->parent != nullptr) {
-    animate(path->config, path->parent->config, start, end, task, &tree);
-    path = path->parent;
-  }
-}
-
-void drawTask(const task_t &task) {
-  for (obstacle_t obs : task) {
+void drawTask(const Task &task) {
+  drawConfig(task.start, sf::Color::Blue);
+  drawConfig(task.end, sf::Color::Blue);
+  for (obstacle_t obs : task.obstacles) {
     sf::ConvexShape shape;
     shape.setPointCount(obs.size());
     shape.setFillColor(sf::Color::Black);
@@ -93,15 +77,18 @@ void drawTask(const task_t &task) {
   }
 }
 
-void animate(const Config &c, const task_t &task) {
-  animate(c, c, c, c, task, nullptr);
+void drawTree(const tree_t &tree) {
+  for (const TreeNode *node : tree) {
+    if (!node->parent)
+      continue;
+    drawLine(node->parent->config, node->config);
+  }
 }
 
-void animate(const Config &c0, const Config &c1,
-    const Config &start, const Config &end, const task_t &task, const tree_t *tree,
-    double moveRate, double secsPerFrame) {
+void animate(const Config &c0, const Config &c1, const Task &task, const tree_t &tree,
+    double movementPerFrame, double secsPerFrame) {
   double d = c0.distanceFrom(c1);
-  int n_movement_frames = d/moveRate + 1;
+  int n_movement_frames = d/movementPerFrame + 1;
   Config line = c1 - c0;
 
   struct timeval tp0, tp1;
@@ -109,10 +96,8 @@ void animate(const Config &c0, const Config &c1,
     gettimeofday(&tp0, NULL);
     Config current = c0 + line * (double(i)/n_movement_frames);
     clear();
-    if (tree)
-      drawTree(*tree, task, false);
-    drawConfig(start, sf::Color::Blue);
-    drawConfig(end, sf::Color::Blue);
+    drawTree(tree);
+    drawTask(task);
     drawConfig(current);
     window.display();
     gettimeofday(&tp1, NULL);
@@ -123,17 +108,17 @@ void animate(const Config &c0, const Config &c1,
   }
 }
 
-void drawTree(const tree_t &tree, const task_t &task, bool render) {
-  if (render)
-    clear();
-  drawTask(task);
-  for (const TreeNode *node : tree) {
-    if (!node->parent)
-      continue;
-    sf::Vertex line[] = {toVertex(node->parent), toVertex(node, true)};
-    window.draw(line, 2, sf::Lines);
+void animatePath(const TreeNode *path, const Task &task, const tree_t &tree,
+    double movementPerFrame, double secsPerFrame) {
+  while (path->parent != nullptr) {
+    animate(path->config, path->parent->config, task, tree, movementPerFrame, secsPerFrame);
+    path = path->parent;
   }
-  if (render)
-    window.display();
 }
 
+void drawTree(const tree_t &tree, const Task &task) {
+  clear();
+  drawTree(tree);
+  drawTask(task);
+  window.display();
+}
