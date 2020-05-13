@@ -70,7 +70,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   */
 
   // Steer toward sampled node
-  double eta = 0.5;
+  double eta = 5.0;
   double steer_frac = eta / min_dist;
   if (steer_frac > 1.0) steer_frac = 1.0;
   Config steered = (existingNode->config) + (config - existingNode->config) * steer_frac;
@@ -80,12 +80,12 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   std::vector<double> costs({});
   // TODO using k-nearest RRT* might actually be less expensive
   double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
-  double rrt_rad = gamma_rrt * pow(log(graph.size()) / graph.size(), 0.33);
-  if (rrt_rad > eta) rrt_rad = eta;
-  double radius = 1.0; // TODO
+  double N = graph.size() + 1;
+  double rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
+  if (rrt_star_rad > eta) rrt_star_rad = eta;
   for (GraphNode *node: graph) {
     double distance = steered.distanceFrom(node->config);
-    if (distance < radius) {
+    if (distance < rrt_star_rad) {
       bool noCollision;
       maxConfig(node->config, steered, task, &noCollision);
       if (noCollision) {
@@ -116,7 +116,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       }
     }
     std::cout << "New node with children: " << children.size() << std::endl;
-    std::cout << "RRT radius: " << rrt_rad << std::endl;
+    std::cout << "RRT radius: " << rrt_star_rad << std::endl;
     return newNode;
   }
   return existingNode;
