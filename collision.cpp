@@ -37,7 +37,7 @@ bool collides(const Config &config, const Task &task) {
   return false;
 }
 
-Config maxConfig(const Config &c0, const Config &c1, const Task &task) {
+Config maxConfig(const Config &c0, const Config &c1, const Task &task, bool *noCollision) {
   double d = c0.distanceFrom(c1);
   Config line = c1 - c0;
   // Given a non-colliding configuration (with some margin BALL_RADIUS),
@@ -50,9 +50,12 @@ Config maxConfig(const Config &c0, const Config &c1, const Task &task) {
   Config current = c0;
   for (int i=1; i < n_frames+1; i++) {
     Config next = c0 + line * (double(i)/n_frames);
-    if (collides(next, task))
+    if (collides(next, task)) {
+      *noCollision = false;
       return current;
+    }
     current = next;
   }
+  *noCollision = true;
   return current; // Which in this case should equal c1
 }

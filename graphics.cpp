@@ -77,15 +77,16 @@ void drawTask(const Task &task) {
   }
 }
 
-void drawTree(const tree_t &tree) {
-  for (const TreeNode *node : tree) {
+// We'll only draw the "best" paths in the graph, RRT* basically
+void drawGraph(const graph_t &graph) {
+  for (const GraphNode *node : graph) {
     if (!node->parent)
       continue;
     drawLine(node->parent->config, node->config);
   }
 }
 
-void animate(const Config &c0, const Config &c1, const Task &task, const tree_t &tree,
+void animate(const Config &c0, const Config &c1, const Task &task, const graph_t &graph,
     double movementPerFrame, double secsPerFrame) {
   double d = c0.distanceFrom(c1);
   int n_movement_frames = d/movementPerFrame + 1;
@@ -96,7 +97,7 @@ void animate(const Config &c0, const Config &c1, const Task &task, const tree_t 
     gettimeofday(&tp0, NULL);
     Config current = c0 + line * (double(i)/n_movement_frames);
     clear();
-    drawTree(tree);
+    drawGraph(graph);
     drawTask(task);
     drawConfig(current);
     window.display();
@@ -108,17 +109,17 @@ void animate(const Config &c0, const Config &c1, const Task &task, const tree_t 
   }
 }
 
-void animatePath(const TreeNode *path, const Task &task, const tree_t &tree,
+void animatePath(const GraphNode *path, const Task &task, const graph_t &graph,
     double movementPerFrame, double secsPerFrame) {
   while (path->parent != nullptr) {
-    animate(path->config, path->parent->config, task, tree, movementPerFrame, secsPerFrame);
+    animate(path->config, path->parent->config, task, graph, movementPerFrame, secsPerFrame);
     path = path->parent;
   }
 }
 
-void drawTree(const tree_t &tree, const Task &task) {
+void drawGraph(const graph_t &graph, const Task &task) {
   clear();
-  drawTree(tree);
+  drawGraph(graph);
   drawTask(task);
   window.display();
 }

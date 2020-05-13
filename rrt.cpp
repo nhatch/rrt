@@ -9,23 +9,15 @@
 #include "collision.h"
 #include "graphics.h"
 
-void traceParents(const TreeNode *leaf) {
-  while (leaf->parent != nullptr) {
-    std::cout << leaf->config;
-    leaf = leaf->parent;
-  }
-  std::cout << leaf->config;
-}
-
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
-double minDistance(const TreeNode *node, const Config &config) {
+double minDistance(const GraphNode *node, const Config &config) {
   return config.distanceFrom(node->config);
 }
 
 /* Uses split nodes. */
 /* Assumes `node` has a parent (i.e. is not root) */
-double minDistance(const TreeNode *node, const Config &config,
+double minDistance(const GraphNode *node, const Config &config,
     bool *needsSplitNode, Config *splitConfig) {
   const Config &c0 = node->parent->config;
   const Config &c1 = node->config;
@@ -45,40 +37,93 @@ double minDistance(const TreeNode *node, const Config &config,
   }
 }
 
-TreeNode *insert(tree_t &tree, const Config &config, const Task &task) {
-  TreeNode *existingNode = tree[0]; // root node
+GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
+  GraphNode *existingNode = graph[0]; // root node
   double min_dist = config.distanceFrom(existingNode->config);
-  bool needsSplitNode = false;
-  bool bestNeedsSplitNode = false;
-  Config splitConfig {0., 0., 0.};
-  Config bestSplitConfig {0., 0., 0.};
+  //bool needsSplitNode = false;
+  //bool bestNeedsSplitNode = false;
+  //Config splitConfig {0., 0., 0.};
+  //Config bestSplitConfig {0., 0., 0.};
 
-  for (TreeNode *node : tree) {
+  // Find nearest node in existing graph
+  for (GraphNode *node : graph) {
     if (!node->parent)
       continue;
-    double d = minDistance(node, config, &needsSplitNode, &splitConfig);
+    //double d = minDistance(node, config, &needsSplitNode, &splitConfig);
+    double d = minDistance(node, config);
     if (d < min_dist) {
       min_dist = d;
       existingNode = node;
-      bestSplitConfig = splitConfig;
-      bestNeedsSplitNode = needsSplitNode;
+      //bestSplitConfig = splitConfig;
+      //bestNeedsSplitNode = needsSplitNode;
     }
   }
 
+  // TODO implement calculation of edge costs for split nodes?
+  /*
   if (bestNeedsSplitNode) {
-    TreeNode *splitNode = new TreeNode {existingNode->parent, bestSplitConfig};
-    tree.push_back(splitNode);
+    GraphNode *splitNode = new GraphNode {existingNode->parent, bestSplitConfig};
+    graph.push_back(splitNode);
     existingNode->parent = splitNode;
     existingNode = splitNode;
   }
-  Config safeConfig = maxConfig(existingNode->config, config, task);
-  TreeNode *leafNode = new TreeNode {existingNode, safeConfig};
-  tree.push_back(leafNode);
-  return leafNode;
+  */
+
+  // Steer toward sampled node
+  double eta = 0.5;
+  double steer_frac = eta / min_dist;
+  if (steer_frac > 1.0) steer_frac = 1.0;
+  Config steered = (existingNode->config) + (config - existingNode->config) * steer_frac;
+
+  // Build new edges (RRT*-style)
+  std::vector<GraphNode *> children({});
+  std::vector<double> costs({});
+  // TODO using k-nearest RRT* might actually be less expensive
+  double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
+  double rrt_rad = gamma_rrt * pow(log(graph.size()) / graph.size(), 0.33);
+  if (rrt_rad > eta) rrt_rad = eta;
+  double radius = 1.0; // TODO
+  for (GraphNode *node: graph) {
+    double distance = steered.distanceFrom(node->config);
+    if (distance < radius) {
+      bool noCollision;
+      maxConfig(node->config, steered, task, &noCollision);
+      if (noCollision) {
+        children.push_back(node);
+        // TODO can the cost be different from the distance?
+        costs.push_back(distance);
+      }
+    }
+  }
+  if (children.size() > 0) {
+    GraphNode *newNode = new GraphNode {steered, children, costs, nullptr, 0.};
+    graph.push_back(newNode);
+    for (size_t i = 0; i < children.size(); i++) {
+      double path_cost = costs[i] + children[i]->cost;
+      if (newNode->parent == nullptr || path_cost < newNode->cost) {
+        newNode->parent = children[i];
+        newNode->cost = path_cost;
+      }
+    }
+    for (size_t i = 0; i < children.size(); i++) {
+      GraphNode *child = children[i];
+      child->children.push_back(newNode);
+      child->costs.push_back(costs[i]);
+      double path_cost = costs[i] + newNode->cost;
+      if (path_cost < child->cost) {
+        child->parent = newNode;
+        child->cost = path_cost;
+      }
+    }
+    std::cout << "New node with children: " << children.size() << std::endl;
+    std::cout << "RRT radius: " << rrt_rad << std::endl;
+    return newNode;
+  }
+  return existingNode;
 }
 
-TreeNode *search(const Config &start, tree_t &tree, const Task &task, double tol=0.001) {
-  TreeNode *current = tree[0];
+GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
+  GraphNode *current = graph[0];
   int iter = 0;
   while (start.distanceFrom(current->config) > tol) {
     Config c;
@@ -87,17 +132,17 @@ TreeNode *search(const Config &start, tree_t &tree, const Task &task, double tol
     } else {
       c = Config::randConfig();
     }
-    current = insert(tree, c, task);
-    drawTree(tree, task);
+    current = insert(graph, c, task);
+    drawGraph(graph, task);
   }
   return current;
 }
 
-void destroyTree(tree_t *tree) {
-  for (TreeNode *node : *tree) {
+void destroyGraph(graph_t *graph) {
+  for (GraphNode *node : *graph) {
     delete node;
   }
-  tree->clear();
+  graph->clear();
 }
 
 int main(int argc, char *argv[]) {
@@ -116,11 +161,11 @@ int main(int argc, char *argv[]) {
   const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
   const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
   Task task {start, end, {obs1, obs2}};
-  TreeNode *root = new TreeNode {nullptr, end};
-  tree_t tree {root};
-  TreeNode *path = search(start, tree, task);
-  animatePath(path, task, tree);
+  GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
+  graph_t graph {g_root};
+  GraphNode *path = search(start, graph, task);
+  animatePath(path, task, graph);
 
-  destroyTree(&tree);
+  destroyGraph(&graph);
   return 0;
 }
