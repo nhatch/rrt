@@ -10,6 +10,8 @@ make
 ./a.out
 ```
 
+If you want to switch between [RRT#](http://dcsl.gatech.edu/papers/icra13.pdf) and RRT, change the constant `PLAIN_RRT` in `rrt.cpp`.
+
 ## Dependencies
 
  * C++11

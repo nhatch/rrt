@@ -9,6 +9,8 @@
 #include "collision.h"
 #include "graphics.h"
 
+const bool PLAIN_RRT = false;
+
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
 double minDistance(const GraphNode *node, const Config &config) {
@@ -96,23 +98,35 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   // Build new edges (RRT*-style)
   std::vector<GraphNode *> children({});
   std::vector<double> costs({});
-  // TODO using k-nearest RRT* might actually be less expensive
-  double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
-  double N = graph.size() + 1;
-  double rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
-  if (rrt_star_rad > eta) rrt_star_rad = eta;
-  for (GraphNode *node: graph) {
-    double distance = steered.distanceFrom(node->config);
-    if (distance < rrt_star_rad) {
-      bool noCollision;
-      maxConfig(node->config, steered, task, &noCollision);
-      if (noCollision) {
-        children.push_back(node);
-        // TODO can the cost be different from the distance?
-        costs.push_back(distance);
+
+  if (PLAIN_RRT) {
+    bool noCollision;
+    maxConfig(existingNode->config, steered, task, &noCollision);
+    if (noCollision) {
+      children.push_back(existingNode);
+      costs.push_back(0.0);
+    }
+  } else {
+    // TODO using k-nearest RRT* might actually be less expensive
+    double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
+    double N = graph.size() + 1;
+    double rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
+    if (rrt_star_rad > eta) rrt_star_rad = eta;
+    std::cout << "RRT radius: " << rrt_star_rad << std::endl;
+    for (GraphNode *node: graph) {
+      double distance = steered.distanceFrom(node->config);
+      if (distance < rrt_star_rad) {
+        bool noCollision;
+        maxConfig(node->config, steered, task, &noCollision);
+        if (noCollision) {
+          children.push_back(node);
+          // TODO can the cost be different from the distance?
+          costs.push_back(distance);
+        }
       }
     }
   }
+
   if (children.size() > 0) {
     GraphNode *newNode = new GraphNode {steered, children, costs, nullptr, 0.};
     graph.push_back(newNode);
@@ -129,9 +143,8 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       child->costs.push_back(costs[i]);
     }
     std::cout << "New node with children: " << children.size() << std::endl;
-    std::cout << "RRT radius: " << rrt_star_rad << std::endl;
 
-    value_iterate(graph);
+    if (!PLAIN_RRT) value_iterate(graph);
 
     return newNode;
   }
