@@ -37,6 +37,24 @@ double minDistance(const GraphNode *node, const Config &config,
   }
 }
 
+void value_iterate(graph_t &graph) {
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    for (GraphNode *node : graph) {
+      for (size_t i = 0; i < node->children.size(); i++) {
+        GraphNode *child = node->children[i];
+        double path_cost = node->costs[i] + child->cost;
+        if (path_cost < node->cost) {
+          changed = true;
+          node->parent = child;
+          node->cost = path_cost;
+        }
+      }
+    }
+  }
+}
+
 GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   GraphNode *existingNode = graph[0]; // root node
   double min_dist = config.distanceFrom(existingNode->config);
@@ -109,14 +127,12 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       GraphNode *child = children[i];
       child->children.push_back(newNode);
       child->costs.push_back(costs[i]);
-      double path_cost = costs[i] + newNode->cost;
-      if (path_cost < child->cost) {
-        child->parent = newNode;
-        child->cost = path_cost;
-      }
     }
     std::cout << "New node with children: " << children.size() << std::endl;
     std::cout << "RRT radius: " << rrt_star_rad << std::endl;
+
+    value_iterate(graph);
+
     return newNode;
   }
   return existingNode;
