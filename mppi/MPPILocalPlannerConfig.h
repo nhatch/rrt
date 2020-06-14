@@ -13,7 +13,7 @@ struct MPPILocalPlannerConfig {
   int mppi_seed = 1;
   float mppi_collision_cost = 100.;
   float mppi_pos_std = 0.01;
-  float mppi_th_std = 0.01;
+  float mppi_th_std = 0.05;
   float mppi_precision_superdiag = -1.0;
   bool mppi_optimize_wheel_speeds = true;
   float mppi_p_coeff = 10.f;

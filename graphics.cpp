@@ -46,7 +46,7 @@ void clear() {
   window.clear(sf::Color::White);
 }
 
-void drawConfig(const Config &config, sf::Color color = sf::Color::Green) {
+void drawConfig(const Config &config, sf::Color color) {
   balls_t balls = config.getBalls();
 
   for (point2d_t ball : balls) {
@@ -121,13 +121,8 @@ void drawGraph(const graph_t &graph, const Task &task) {
   clear();
   drawGraph(graph);
   drawTask(task);
-  window.display();
 }
 
-void drawStuff(const Config &config, const Task &task, const graph_t &graph) {
-  clear();
-  drawGraph(graph);
-  drawTask(task);
-  drawConfig(config);
+void doneDrawingStuff() {
   window.display();
 }

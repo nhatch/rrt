@@ -40,7 +40,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
   double d = current->distanceFrom(target);
   //double alpha = MAX_DIFF / d;
-  if (d < MAX_DIFF) {
+  if (d < 3*MAX_DIFF) {
     //alpha = 1.0;
     next_target = next_target->parent;
   }
@@ -70,14 +70,30 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
   // Put a big obstacle in the middle
   for (unsigned int i = 300; i < 700; i++) {
     for (unsigned int j = 300; j < 700; j++) {
-      costmap.setCost(i, j, 255);
+      //costmap.setCost(i, j, 255);
     }
   }
 
   while (!done) {
     gettimeofday(&tp0, NULL);
+    StateArrayf x;
+    x << current.x, current.y, current.theta;
+    StateArrayXf seq = mppi.rolloutNominalSeq(x);
+    drawGraph(graph, task);
+    for (int i = 0; i < seq.cols(); i++) {
+      if (i % 5 == 0) {
+        StateArrayf x = seq.col(i);
+        Config conf(x(0), x(1), x(2));
+        if (i == 0) {
+          drawConfig(conf, sf::Color(0, 255, 0, 255));
+        } else {
+          drawConfig(conf, sf::Color(128, 200, 128, 64));
+        }
+      }
+    }
+    doneDrawingStuff();
+
     done = getNextConfig(&current, path, task, graph, mppi, costmap);
-    drawStuff(current, task, graph);
     gettimeofday(&tp1, NULL);
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;

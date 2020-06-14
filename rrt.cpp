@@ -164,6 +164,7 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
     }
     current = insert(graph, c, task);
     drawGraph(graph, task);
+    doneDrawingStuff();
   }
   return current;
 }
