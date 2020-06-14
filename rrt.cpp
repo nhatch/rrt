@@ -8,6 +8,7 @@
 #include "rrt.h"
 #include "collision.h"
 #include "graphics.h"
+#include "control.h"
 
 const bool PLAIN_RRT = false;
 
@@ -189,11 +190,12 @@ int main(int argc, char *argv[]) {
   const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
   const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
   const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
-  Task task {start, end, {obs1, obs2}};
+  Task task {start, end, {obs1}};//, obs2}};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
   graph_t graph {g_root};
   GraphNode *path = search(start, graph, task);
-  animatePath(path, task, graph);
+  //animatePath(path, task, graph);
+  doControl(path, task, graph);
 
   destroyGraph(&graph);
   return 0;

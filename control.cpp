@@ -3,6 +3,12 @@
 #include <ctime>
 #include <unistd.h>
 
+#include <costmap_2d/costmap_2d.h>
+#include "mppi/kinematic_mppi.h"
+#include "mppi/rbv_mppi.h"
+#include "mppi/wv_mppi.h"
+#include "mppi/MPPILocalPlannerConfig.h"
+
 #include "config.h"
 #include "rrt.h"
 #include "collision.h"
@@ -14,6 +20,7 @@ const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 
 GraphNode *next_target; // sorry about the global var; will fix eventually TODO
+WheelVelocityMPPI mppi(MPPILocalPlannerConfig());
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task, const graph_t &graph) {
   if (next_target == nullptr) {

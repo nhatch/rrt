@@ -123,3 +123,11 @@ void drawGraph(const graph_t &graph, const Task &task) {
   drawTask(task);
   window.display();
 }
+
+void drawStuff(const Config &config, const Task &task, const graph_t &graph) {
+  clear();
+  drawGraph(graph);
+  drawTask(task);
+  drawConfig(config);
+  window.display();
+}
