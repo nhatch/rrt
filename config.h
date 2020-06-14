@@ -11,6 +11,7 @@ extern const double MIN_Y;
 extern const double MAX_Y;
 extern const double LENGTH;
 extern const double BALL_RADIUS;
+extern const double THETA_WEIGHT;
 
 constexpr size_t N_BALLS = 11;
 
@@ -18,12 +19,11 @@ using point2d_t = std::array<double,2>;
 using balls_t = std::array<point2d_t,N_BALLS>;
 
 class Config {
-private:
+public:
   double x;
   double y;
   double theta;
 
-public:
   Config(double x = 0.0, double y = 0.0, double theta = 0.0);
 
   static Config randConfig();

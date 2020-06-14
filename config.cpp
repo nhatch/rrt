@@ -14,7 +14,7 @@ extern const double BALL_RADIUS = LENGTH / (N_BALLS - 1);
 // that collisions will be detected. (I think.)
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
-const double THETA_WEIGHT = 2.;
+extern const double THETA_WEIGHT = 2.;
 
 double randf() {
   return double(std::rand())/RAND_MAX;

@@ -20,8 +20,8 @@
  * limited to the range [+/-max_vel_th_].
  */
 
-#define STATE_DIM 5
-#define CONTROL_DIM 2
+#define STATE_DIM 3
+#define CONTROL_DIM 3
 
 #define UNKNOWN_PENALTY 3 // somewhat arbitrary small cost
 
@@ -86,12 +86,6 @@ class KinematicMPPI {
     void optimize(const StateArrayf& state, const costmap_2d::Costmap2D &costmap);
 
     /**
-     * @brief The nominal sequence of rigid body velocities.
-     * @return The nominal sequence of rigid body velocities.
-     */
-    Array2Xf nominalRigidBodyVels();
-
-    /**
      * @brief Rolls out nominal control sequence.
      * @param state The current state of the system.
      * @return The state trajectory induced by the nominal control sequence.
@@ -130,6 +124,7 @@ class KinematicMPPI {
     float max_vel_th_;
     float speed_cost_threshold_;
     float speed_cost_weight_;
+    float theta_weight_;
 
     void shiftControlHistory();
     MatrixXf buildTridiag(float std1, float std2, float superdiag);

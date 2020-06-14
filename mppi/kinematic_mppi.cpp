@@ -6,7 +6,7 @@
 float KinematicMPPI::VEL_MAX = 1.f;
 float KinematicMPPI::TRACK = 0.545f;
 constexpr bool LEARN_COVARIANCE = false;
-constexpr bool FULL_COVARIANCE = true;
+constexpr bool FULL_COVARIANCE = false;
 
 ArrayXf reshape(ArrayXXf array, size_t size) {
   assert(array.size() == size);
@@ -19,43 +19,38 @@ ArrayXXf reshape(ArrayXXf array, size_t rows, size_t cols) {
 }
 
 KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config) {
-  horizon_ = (int) (config.time_horizon * config.action_frequency);
-  lag_horizon_ = (int) config.action_frequency * config.lag;
+  horizon_ = config.time_horizon;
+  lag_horizon_ = config.lag;
   sample_horizon_ = horizon_ - lag_horizon_;
-  dt_ = 1.f/config.action_frequency;
   rollouts_ = config.mppi_rollouts;
   temperature_ = config.mppi_temperature;
   orientation_width_ = config.mppi_orientation_width;
   alpha_ = config.mppi_covariance_prior_weight;
   collision_cost_ = config.mppi_collision_cost;
-  max_delta_v_ = config.max_accel * dt_;
   opt_iters_ = config.mppi_opt_iters;
   speed_cost_threshold_ = VEL_MAX * config.speed_cost_threshold;
   speed_cost_weight_ = config.speed_cost_weight;
   max_vel_th_ = config.max_vel_th;
   nominal_cost_ = 1000.f; // Some big number
+  theta_weight_ = config.theta_weight;
 
-  float std1, std2;
-  if (config.mppi_optimize_wheel_speeds) {
-    std1 = std2 = config.mppi_vel_wh_std;
-  } else {
-    std1 = config.mppi_vel_x_std;
-    std2 = config.mppi_vel_th_std;
-  }
+  /*
   if (FULL_COVARIANCE) {
-    control_sqrt_cov_ = buildTridiag(std1, std2, config.mppi_precision_superdiag);
+    control_sqrt_cov_ = buildTridiag(config.mppi_pos_std, config.mppi_th_std, config.mppi_precision_superdiag);
     control_sqrt_cov_wild_ = buildTridiag(0.2f, 0.2f, -5.f);
     control_sqrt_cov_prior_ = control_sqrt_cov_;
   } else {
-    Eigen::Vector2f stds;
-    stds << std1, std2;
-    control_sqrt_cov_ = stds.replicate(sample_horizon_,1).asDiagonal();
-  }
+  */
+  Eigen::Vector3f stds;
+  stds << config.mppi_pos_std, config.mppi_pos_std, config.mppi_th_std;
+  control_sqrt_cov_ = stds.replicate(sample_horizon_,1).asDiagonal();
+
   U_.resize(Eigen::NoChange, sample_horizon_);
   control_history_.resize(Eigen::NoChange, lag_horizon_);
   Eigen::internal::scalar_normal_dist_op<float>::rng.seed(config.mppi_seed); // Seed the RNG
 }
 
+/*
 MatrixXf KinematicMPPI::buildTridiag(float std1, float std2, float superdiag) {
     MatrixXf precision_sqrt(CONTROL_DIM*sample_horizon_, CONTROL_DIM*sample_horizon_);
     precision_sqrt.setZero();
@@ -66,6 +61,7 @@ MatrixXf KinematicMPPI::buildTridiag(float std1, float std2, float superdiag) {
     }
     return precision_sqrt.inverse();
 }
+*/
 
 KinematicMPPI::~KinematicMPPI() {}
 
@@ -178,19 +174,16 @@ StateArrayXf KinematicMPPI::rolloutNominalSeq(const StateArrayf& state) {
 StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U) {
   ArrayXXf V;
   StateArrayXf X_next(STATE_DIM, X.cols());
-  if (max_delta_v_ > 0.) { // Use a second-order system, kind of
-    ControlArrayXf vel_diff = U - X.bottomRows(2);
-    // TODO might want to use different acceleration limits for angular and linear
-    vel_diff = vel_diff.max(-max_delta_v_).min(max_delta_v_);
-    X_next.bottomRows(2) = X.bottomRows(2) + vel_diff;
-    V = toRigidBodyVels(X.bottomRows(2));
-  } else {
-    X_next.bottomRows(2) = U;
-    V = toRigidBodyVels(U);
-  }
+  X_next.bottomRows(2) = U;
+  V = toRigidBodyVels(U);
+  /*
   X_next.row(0) = X.row(0) + V.row(0)*cos(X.row(2))*dt_;
   X_next.row(1) = X.row(1) + V.row(0)*sin(X.row(2))*dt_;
   X_next.row(2) = X.row(2) + V.row(1)*dt_;
+  */
+  X_next.row(0) = X.row(0) + V.row(0);
+  X_next.row(1) = X.row(1) + V.row(1);
+  X_next.row(2) = X.row(2) + V.row(2) / theta_weight_;
   return X_next;
 }
 
@@ -228,19 +221,19 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Cost
 
   ArrayXXf posn_errs = posns.colwise() - goal_.block(0, 0, 2, 1);
   ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
-  ArrayXf speeds_flat = states.bottomRows(2).matrix().colwise().norm().array();
+  //ArrayXf speeds_flat = states.bottomRows(2).matrix().colwise().norm().array();
   ArrayXf dist2goal_sq_flat = dist2goal_flat * dist2goal_flat;
-  ArrayXf speeds_sq_flat = speeds_flat * speeds_flat;
-  terrain_flat_inflated *= (speeds_flat - 0.5).max(0.0); // Penalize terrain more when going fast
-  ArrayXf speed_costs_coeffs_flat = 1.0 - dist2goal_flat.min(speed_cost_threshold_) / speed_cost_threshold_;
-  ArrayXf speed_costs_flat = speed_cost_weight_ * speeds_sq_flat * speed_costs_coeffs_flat;
+  //ArrayXf speeds_sq_flat = speeds_flat * speeds_flat;
+  //terrain_flat_inflated *= (speeds_flat - 0.5).max(0.0); // Penalize terrain more when going fast
+  //ArrayXf speed_costs_coeffs_flat = 1.0 - dist2goal_flat.min(speed_cost_threshold_) / speed_cost_threshold_;
+  //ArrayXf speed_costs_flat = speed_cost_weight_ * speeds_sq_flat * speed_costs_coeffs_flat;
   ArrayXf yaw_costs_flat = -cos(yaws - goal_(2));
   // Subtract the minimum distance so that even when the robot is very far from the goal,
   // the distance cost will be roughly balanced with the obstacle/speed costs.
   dist2goal_flat -= dist2goal_flat.minCoeff();
   ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal+terrain_flat_inflated) + dist2goal_flat
-                       + exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
-                       + speed_costs_flat;
+                       //+ speed_costs_flat
+                       + exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat;
 
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
   ArrayXf traj_costs = costs.colwise().sum();
@@ -265,12 +258,5 @@ void KinematicMPPI::updateControlSeq(const ArrayXXf& U_trajs, ArrayXf& traj_cost
     Eigen::SelfAdjointEigenSolver<MatrixXf> es(cov_new);
     control_sqrt_cov_ = alpha_ * control_sqrt_cov_prior_ + (1.f-alpha_) * es.operatorSqrt();
   }
-}
-
-Array2Xf KinematicMPPI::nominalRigidBodyVels() {
-  ArrayXf U_flat = reshape(U_, CONTROL_DIM*sample_horizon_, 1);
-  ArrayXf V_flat = toRigidBodyVels(U_flat);
-  Array2Xf V = reshape(V_flat, 2, sample_horizon_);
-  return V;
 }
 

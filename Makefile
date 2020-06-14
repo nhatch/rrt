@@ -1,8 +1,8 @@
 CC=g++
-CFLAGS=-pedantic-errors -Wall -Weffc++ -Wextra -Wsign-conversion
-DEPS=config.o rrt.o collision.o graphics.o control.o
 ROS_INCLUDE=-I /opt/ros/melodic/include
-ROS_LINK=-lboost_system
+CFLAGS=-pedantic-errors -Wall -Wextra -Wsign-conversion $(ROS_INCLUDE) #-Weffc++
+DEPS=config.o rrt.o collision.o graphics.o control.o mppi/kinematic_mppi.o mppi/stick_mppi.o
+ROS_LINK=-L /opt/ros/melodic/lib -lboost_system  -lcostmap_2d
 SFML_LINK=-lsfml-graphics -lsfml-window -lsfml-system
 
 target: $(DEPS)
@@ -12,7 +12,7 @@ rrt.o: rrt.cpp rrt.h graphics.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 control.o: control.cpp control.h
-	$(CC) $(CFLAGS) $(ROS_INCLUDE) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.cpp %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
