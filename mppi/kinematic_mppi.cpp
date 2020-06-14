@@ -135,8 +135,8 @@ ArrayXXf KinematicMPPI::sampleControlTrajs() {
   // Use control_sqrt_cov_wild_ to generate the next `wild_rollouts` samples
   // TODO: Why, after MPPI finds a good rollout using the wild rollouts, does it sometimes snap
   // back to a worse local minimum?
-  U_trajs.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts) =
-      (control_sqrt_cov_wild_ * dU_norm_flat.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts)).array();
+  //U_trajs.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts) =
+  //    (control_sqrt_cov_wild_ * dU_norm_flat.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts)).array();
   U_trajs.leftCols(rollouts_ - zero_rollouts).colwise() += U_flat;
   U_trajs.leftCols(1).colwise() = U_flat;
   clamp(U_trajs);
@@ -174,7 +174,6 @@ StateArrayXf KinematicMPPI::rolloutNominalSeq(const StateArrayf& state) {
 StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U) {
   ArrayXXf V;
   StateArrayXf X_next(STATE_DIM, X.cols());
-  X_next.bottomRows(2) = U;
   V = toRigidBodyVels(U);
   /*
   X_next.row(0) = X.row(0) + V.row(0)*cos(X.row(2))*dt_;
