@@ -18,14 +18,13 @@ const double CONTROL_HZ = 30;
 const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 
-GraphNode *next_target; // sorry about the global var; will fix eventually TODO
-
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const costmap_2d::Costmap2D& costmap) {
-  if (next_target == nullptr) {
+  Config target = graph[0]->config;
+  double d = current->distanceFrom(target);
+  if (d < MAX_DIFF) {
     return true;
   }
-  Config target = next_target->config;
 
   ControlArrayf u, v;
   StateArrayf x, g;
@@ -33,17 +32,12 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   g << target.x, target.y, target.theta;
   mppi.setGoal(g);
 
-  mppi.optimize(x, costmap);
+  mppi.optimize(x, costmap, graph);
   u = mppi.pop(x);
   u(2) /= pow(THETA_WEIGHT, 0.5);
   Config next = (*current) + Config(u(0), u(1), u(2));
 
-  double d = current->distanceFrom(target);
   //double alpha = MAX_DIFF / d;
-  if (d < 3*MAX_DIFF) {
-    //alpha = 1.0;
-    next_target = next_target->parent;
-  }
   //Config line = target - (*current);
   //Config next = (*current) + line * alpha;
 
@@ -53,7 +47,6 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
 void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
   Config current = path->config;
-  next_target = path->parent;
   bool done = false;
   struct timeval tp0, tp1;
   double secsPerFrame = 1/CONTROL_HZ;

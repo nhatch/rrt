@@ -91,7 +91,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   */
 
   // Steer toward sampled node
-  double eta = 5.0;
+  double eta = 0.2;
   double steer_frac = eta / min_dist;
   if (steer_frac > 1.0) steer_frac = 1.0;
   Config steered = (existingNode->config) + (config - existingNode->config) * steer_frac;

@@ -3,7 +3,7 @@
 #define _MPPI_CFG_H_
 
 struct MPPILocalPlannerConfig {
-  int mppi_rollouts = 1000;
+  int mppi_rollouts = 100;
   int time_horizon = 20;
   int lag = 0;
   float action_frequency = 50;

@@ -97,7 +97,7 @@ void KinematicMPPI::shift(const StateArrayf& state) {
   U_.col(sample_horizon_-1).setZero();
 }
 
-void KinematicMPPI::optimize(const StateArrayf& state, const costmap_2d::Costmap2D &costmap) {
+void KinematicMPPI::optimize(const StateArrayf& state, const costmap_2d::Costmap2D &costmap, const graph_t& graph) {
   if (iters_since_reset_ > 0) {
     float prediction_error = (state - predicted_next_state_).matrix().norm();
     avg_prediction_error_ = (avg_prediction_error_ * (iters_since_reset_-1) + prediction_error) / iters_since_reset_;
@@ -107,10 +107,10 @@ void KinematicMPPI::optimize(const StateArrayf& state, const costmap_2d::Costmap
   for (int i = 0; i < opt_iters_; i++) {
     SampledTrajs samples = sampleTrajs(state);
     recent_samples_ = samples; // for debugging
-    ArrayXf traj_costs = computeCost(samples, costmap);
+    ArrayXf traj_costs = computeCost(samples, costmap, graph);
     updateControlSeq(samples.U_trajs, traj_costs);
     SampledTrajs nominalTraj = { rolloutNominalSeq(state), U_ };
-    nominal_cost_ = computeCost(nominalTraj, costmap)(0);
+    nominal_cost_ = computeCost(nominalTraj, costmap, graph)(0);
   }
 }
 
@@ -186,7 +186,7 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   return X_next;
 }
 
-ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Costmap2D &costmap) {
+ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Costmap2D &costmap, const graph_t& graph) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
   Array2Xf posns = states.topRows(2);
@@ -217,22 +217,40 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Cost
       terrain_flat_inflated(i) = float_cost;
     }
   }
+  ArrayXf terminal_cost;
+  terminal_cost.resize(posns.outerSize());
+  for (int i = 0; i < posns.outerSize(); i++) {
+    StateArrayf x = states.col(i);
+    Config c(x(0), x(1), x(2));
+    float min_dist = 1000.f;
+    double t_cost = 0.f;
+    for (GraphNode *node : graph) {
+      double d = c.distanceFrom(node->config);
+      if (d < min_dist) {
+        min_dist = d;
+        t_cost = node->cost + d;
+      }
+    }
+    terminal_cost(i) = t_cost;
+  }
 
-  ArrayXXf posn_errs = posns.colwise() - goal_.block(0, 0, 2, 1);
-  ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
+  //ArrayXXf posn_errs = posns.colwise() - goal_.block(0, 0, 2, 1);
+  //ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
   //ArrayXf speeds_flat = states.bottomRows(2).matrix().colwise().norm().array();
-  ArrayXf dist2goal_sq_flat = dist2goal_flat * dist2goal_flat;
+  //ArrayXf dist2goal_sq_flat = dist2goal_flat * dist2goal_flat;
   //ArrayXf speeds_sq_flat = speeds_flat * speeds_flat;
   //terrain_flat_inflated *= (speeds_flat - 0.5).max(0.0); // Penalize terrain more when going fast
   //ArrayXf speed_costs_coeffs_flat = 1.0 - dist2goal_flat.min(speed_cost_threshold_) / speed_cost_threshold_;
   //ArrayXf speed_costs_flat = speed_cost_weight_ * speeds_sq_flat * speed_costs_coeffs_flat;
-  ArrayXf yaw_costs_flat = -cos(yaws - goal_(2));
+  //ArrayXf yaw_costs_flat = -cos(yaws - goal_(2));
   // Subtract the minimum distance so that even when the robot is very far from the goal,
   // the distance cost will be roughly balanced with the obstacle/speed costs.
-  dist2goal_flat -= dist2goal_flat.minCoeff();
-  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal+terrain_flat_inflated) + dist2goal_flat
+  //dist2goal_flat -= dist2goal_flat.minCoeff();
+  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal+terrain_flat_inflated)
+                       //+ dist2goal_flat
                        //+ speed_costs_flat
-                       + exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat;
+                       //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
+                       + terminal_cost;
 
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
   ArrayXf traj_costs = costs.colwise().sum();
