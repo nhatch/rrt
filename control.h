@@ -10,6 +10,6 @@ const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 const bool MPPI_CHOOSE_OWN_GOAL = true;
 
-void doControl(const GraphNode *path, const Task &task, const graph_t &graph);
+void doControl(const GraphNode *path, const Task &task, const graph_t &graph, const graph_t &min_graph);
 
 #endif

@@ -47,7 +47,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   return false;
 }
 
-void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
+void doControl(const GraphNode *path, const Task &task, const graph_t &graph, const graph_t &min_graph) {
   Config current = path->config;
   if (MPPI_CHOOSE_OWN_GOAL) {
     next_stepwise_target = graph[0];
@@ -79,7 +79,7 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
     StateArrayf x;
     x << current.x, current.y, current.theta;
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
-    drawGraph(graph, task);
+    drawGraph(min_graph, task);
     Config goal(mppi.goal_(0), mppi.goal_(1), mppi.goal_(2));
     drawConfig(goal, sf::Color(0, 0, 255, 255));
     Config nearest(mppi.nearest_(0), mppi.nearest_(1), mppi.nearest_(2));

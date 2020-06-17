@@ -197,18 +197,14 @@ int main(int argc, char *argv[]) {
   GraphNode *path = search(start, graph, task);
   //animatePath(path, task, graph);
 
-  bool MINIMIZE_GRAPH = true;
-  if (MINIMIZE_GRAPH) {
-    graph_t min_graph {};
-    GraphNode *curr = path;
-    while (curr != nullptr) {
-      min_graph.insert(min_graph.begin(), 1, curr);
-      curr = curr->parent;
-    }
-    graph = min_graph;
+  graph_t min_graph {};
+  GraphNode *curr = path;
+  while (curr != nullptr) {
+    min_graph.insert(min_graph.begin(), 1, curr);
+    curr = curr->parent;
   }
 
-  doControl(path, task, graph);
+  doControl(path, task, graph, min_graph);
 
   destroyGraph(&graph);
   return 0;
