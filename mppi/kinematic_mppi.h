@@ -6,6 +6,7 @@
 #include "gaussian_rng.h"
 #include "mppi/MPPILocalPlannerConfig.h"
 #include "rrt.h"
+#include "control.h"
 
 /**
  * State representation:
@@ -96,6 +97,9 @@ class KinematicMPPI {
     float nominalCost();
 
     SampledTrajs recent_samples_; // for visualization / debugging
+    SampledTrajs nominal_traj_; // for visualization / debugging
+    Array3f goal_;
+    Array3f nearest_;
   protected:
     // MPPI parameters
     int rollouts_;
@@ -120,7 +124,6 @@ class KinematicMPPI {
     // Cost parameters
     float orientation_width_;
     float collision_cost_;
-    Array3f goal_;
     float max_delta_v_;
     float max_vel_th_;
     float speed_cost_threshold_;

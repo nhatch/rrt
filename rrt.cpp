@@ -113,7 +113,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
     double N = graph.size() + 1;
     double rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
     if (rrt_star_rad > eta) rrt_star_rad = eta;
-    std::cout << "RRT radius: " << rrt_star_rad << std::endl;
+    //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
     for (GraphNode *node: graph) {
       double distance = steered.distanceFrom(node->config);
       if (distance < rrt_star_rad) {
@@ -143,7 +143,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       child->children.push_back(newNode);
       child->costs.push_back(costs[i]);
     }
-    std::cout << "New node with children: " << children.size() << std::endl;
+    //std::cout << "New node with children: " << children.size() << std::endl;
 
     if (!PLAIN_RRT) value_iterate(graph);
 
@@ -196,6 +196,18 @@ int main(int argc, char *argv[]) {
   graph_t graph {g_root};
   GraphNode *path = search(start, graph, task);
   //animatePath(path, task, graph);
+
+  bool MINIMIZE_GRAPH = true;
+  if (MINIMIZE_GRAPH) {
+    graph_t min_graph {};
+    GraphNode *curr = path;
+    while (curr != nullptr) {
+      min_graph.insert(min_graph.begin(), 1, curr);
+      curr = curr->parent;
+    }
+    graph = min_graph;
+  }
+
   doControl(path, task, graph);
 
   destroyGraph(&graph);

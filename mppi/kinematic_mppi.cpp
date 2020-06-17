@@ -107,10 +107,10 @@ void KinematicMPPI::optimize(const StateArrayf& state, const costmap_2d::Costmap
   for (int i = 0; i < opt_iters_; i++) {
     SampledTrajs samples = sampleTrajs(state);
     recent_samples_ = samples; // for debugging
+    nominal_traj_ = { rolloutNominalSeq(state), U_ };
+    nominal_cost_ = computeCost(nominal_traj_, costmap, graph)(0);
     ArrayXf traj_costs = computeCost(samples, costmap, graph);
     updateControlSeq(samples.U_trajs, traj_costs);
-    SampledTrajs nominalTraj = { rolloutNominalSeq(state), U_ };
-    nominal_cost_ = computeCost(nominalTraj, costmap, graph)(0);
   }
 }
 
@@ -186,6 +186,24 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   return X_next;
 }
 
+GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost) {
+  Config c(x(0), x(1), x(2));
+  GraphNode *min_node = nullptr;
+  double min_dist = 10000.f;
+  double min_cost = 0.f;
+  for (GraphNode *node : graph) {
+    double d = c.distanceFrom(node->config);
+    if (d < min_dist) {
+      min_node = node;
+      min_dist = d;
+      double cost = node->cost + d;
+      min_cost = cost;
+    }
+  }
+  *cost = min_cost;
+  return min_node;
+}
+
 ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Costmap2D &costmap, const graph_t& graph) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
@@ -217,25 +235,27 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Cost
       terrain_flat_inflated(i) = float_cost;
     }
   }
-  ArrayXf terminal_cost;
-  terminal_cost.resize(posns.outerSize());
-  for (int i = 0; i < posns.outerSize(); i++) {
-    StateArrayf x = states.col(i);
-    Config c(x(0), x(1), x(2));
-    float min_dist = 1000.f;
-    double t_cost = 0.f;
-    for (GraphNode *node : graph) {
-      double d = c.distanceFrom(node->config);
-      if (d < min_dist) {
-        min_dist = d;
-        t_cost = node->cost + d;
-      }
+  //ArrayXf terminal_cost;
+  //terminal_cost.resize(posns.outerSize());
+
+  if (MPPI_CHOOSE_OWN_GOAL) {
+    double t_cost;
+    StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
+    GraphNode *node = nearestNode(graph, x, &t_cost);
+    Config near_c = node->config;
+    Config goal_c = node->config;
+    if (node->parent != nullptr) {
+      goal_c = node->parent->config;
     }
-    terminal_cost(i) = t_cost;
+    nearest_ << near_c.x, near_c.y, near_c.theta;
+    goal_ << goal_c.x, goal_c.y, goal_c.theta;
+  } else {
+    nearest_ = goal_;
   }
 
-  //ArrayXXf posn_errs = posns.colwise() - goal_.block(0, 0, 2, 1);
-  //ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
+  ArrayXXf posn_errs = states.colwise() - goal_;
+  posn_errs.row(2) *= theta_weight_;
+  ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
   //ArrayXf speeds_flat = states.bottomRows(2).matrix().colwise().norm().array();
   //ArrayXf dist2goal_sq_flat = dist2goal_flat * dist2goal_flat;
   //ArrayXf speeds_sq_flat = speeds_flat * speeds_flat;
@@ -247,10 +267,9 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Cost
   // the distance cost will be roughly balanced with the obstacle/speed costs.
   //dist2goal_flat -= dist2goal_flat.minCoeff();
   ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal+terrain_flat_inflated)
-                       //+ dist2goal_flat
+                       + dist2goal_flat;
                        //+ speed_costs_flat
                        //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
-                       + terminal_cost;
 
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
   ArrayXf traj_costs = costs.colwise().sum();

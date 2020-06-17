@@ -14,23 +14,25 @@
 #include "graphics.h"
 #include "control.h"
 
-const double CONTROL_HZ = 30;
-const double SPEED = 1.0;
-const double MAX_DIFF = SPEED / CONTROL_HZ;
+GraphNode *next_stepwise_target;
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const costmap_2d::Costmap2D& costmap) {
-  Config target = graph[0]->config;
+  Config target = next_stepwise_target->config;
   double d = current->distanceFrom(target);
-  if (d < MAX_DIFF) {
-    return true;
+  if (d < 3*MAX_DIFF) {
+    if (next_stepwise_target->parent == nullptr) return true;
+    if (!MPPI_CHOOSE_OWN_GOAL) next_stepwise_target = next_stepwise_target->parent;
   }
 
   ControlArrayf u, v;
   StateArrayf x, g;
   x << current->x, current->y, current->theta;
-  g << target.x, target.y, target.theta;
-  mppi.setGoal(g);
+
+  if (!MPPI_CHOOSE_OWN_GOAL) {
+    g << target.x, target.y, target.theta;
+    mppi.setGoal(g);
+  }
 
   mppi.optimize(x, costmap, graph);
   u = mppi.pop(x);
@@ -47,6 +49,11 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
 void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
   Config current = path->config;
+  if (MPPI_CHOOSE_OWN_GOAL) {
+    next_stepwise_target = graph[0];
+  } else {
+    next_stepwise_target = path->parent;
+  }
   bool done = false;
   struct timeval tp0, tp1;
   double secsPerFrame = 1/CONTROL_HZ;
@@ -73,8 +80,12 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph) {
     x << current.x, current.y, current.theta;
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
     drawGraph(graph, task);
+    Config goal(mppi.goal_(0), mppi.goal_(1), mppi.goal_(2));
+    drawConfig(goal, sf::Color(0, 0, 255, 255));
+    Config nearest(mppi.nearest_(0), mppi.nearest_(1), mppi.nearest_(2));
+    drawConfig(nearest, sf::Color(255, 0, 0, 255));
     for (int i = 0; i < seq.cols(); i++) {
-      if (i % 5 == 0) {
+      if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
         Config conf(x(0), x(1), x(2));
         if (i == 0) {
