@@ -3,7 +3,6 @@
 #include <ctime>
 #include <unistd.h>
 
-#include <costmap_2d/costmap_2d.h>
 #include "mppi/kinematic_mppi.h"
 #include "mppi/stick_mppi.h"
 #include "mppi/MPPILocalPlannerConfig.h"
@@ -17,7 +16,7 @@
 GraphNode *next_stepwise_target;
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
-    const graph_t &graph, KinematicMPPI& mppi, const costmap_2d::Costmap2D& costmap) {
+    const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap) {
   Config target = next_stepwise_target->config;
   double d = current->distanceFrom(target);
   if (d < 3*MAX_DIFF) {
@@ -64,15 +63,25 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph, co
   Array3f goal;
   goal << 0., 0., 0.;
 
+  std::cout << "Making costmap..." << std::flush;
   mppi.reset();
   mppi.setGoal(goal);
-  auto costmap = costmap_2d::Costmap2D(1000, 1000, 0.01, -2.5, -2.5);
-  // Put a big obstacle in the middle
-  for (unsigned int i = 300; i < 700; i++) {
-    for (unsigned int j = 300; j < 700; j++) {
-      //costmap.setCost(i, j, 255);
+  ArrayXXb costmap;
+  costmap.fill(false);
+  costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
+  for (unsigned int i = 0; i < COST_DIM_X; i++) {
+    for (unsigned int j = 0; j < COST_DIM_Y; j++) {
+      for (unsigned int k = 0; k < COST_DIM_TH; k++) {
+        Config c(i*COST_RESOLUTION_XY + MIN_X,
+                 j*COST_RESOLUTION_XY + MIN_Y,
+                 k*COST_RESOLUTION_TH);
+        if (collides(c, task)) {
+          costmap(i, j*COST_DIM_TH + k) = true;
+        }
+      }
     }
   }
+  std::cout << "done.\n";
 
   while (!done) {
     gettimeofday(&tp0, NULL);

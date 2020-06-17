@@ -91,7 +91,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   */
 
   // Steer toward sampled node
-  double eta = 0.2;
+  double eta = 0.5;
   double steer_frac = eta / min_dist;
   if (steer_frac > 1.0) steer_frac = 1.0;
   Config steered = (existingNode->config) + (config - existingNode->config) * steer_frac;
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
   const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
   const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
   const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
-  Task task {start, end, {obs1}};//, obs2}};
+  Task task {start, end, {obs1, obs2}};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
   graph_t graph {g_root};
   GraphNode *path = search(start, graph, task);

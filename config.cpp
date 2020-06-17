@@ -3,19 +3,6 @@
 #include <cstdlib>
 #include "config.h"
 
-extern const double MIN_X = -1.0;
-extern const double MAX_X = 1.0;
-extern const double MIN_Y = -1.0;
-extern const double MAX_Y = 1.0;
-extern const double LENGTH = 0.2;
-extern const double BALL_RADIUS = LENGTH / (N_BALLS - 1);
-
-// Should be at least LENGTH^2 to guarantee
-// that collisions will be detected. (I think.)
-// For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
-// tends to solve the problem faster.
-extern const double THETA_WEIGHT = 2.;
-
 double randf() {
   return double(std::rand())/RAND_MAX;
 }

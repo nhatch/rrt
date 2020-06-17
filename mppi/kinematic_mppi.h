@@ -2,7 +2,6 @@
 #define _KINEMATIC_MPPI_H_
 
 #include <eigen3/Eigen/Core>
-#include <costmap_2d/costmap_2d.h>
 #include "gaussian_rng.h"
 #include "mppi/MPPILocalPlannerConfig.h"
 #include "rrt.h"
@@ -85,7 +84,7 @@ class KinematicMPPI {
      * @param state The current state of the system.
      * @param costmap The 2D map used to calculate trajectory costs.
      */
-    void optimize(const StateArrayf& state, const costmap_2d::Costmap2D &costmap, const graph_t& graph);
+    void optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph);
 
     /**
      * @brief Rolls out nominal control sequence.
@@ -168,7 +167,7 @@ class KinematicMPPI {
      * @param costmap The 2D map used to calculate trajectory costs.
      * @return The corresponding costs.
      */
-    ArrayXf computeCost(SampledTrajs& samples, const costmap_2d::Costmap2D &costmap, const graph_t &graph);
+    ArrayXf computeCost(SampledTrajs& samples, const ArrayXXb& costmap, const graph_t &graph);
 
     /**
      * @brief Updates the control sequence according to the MPPI update law.

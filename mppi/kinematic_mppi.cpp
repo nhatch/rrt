@@ -1,7 +1,7 @@
 #include "kinematic_mppi.h"
+#include "../collision.h"
 #include <Eigen/Eigenvalues>
 #include <ros/console.h>
-#include <costmap_2d/cost_values.h>
 
 float KinematicMPPI::VEL_MAX = 1.f;
 float KinematicMPPI::TRACK = 0.545f;
@@ -97,7 +97,7 @@ void KinematicMPPI::shift(const StateArrayf& state) {
   U_.col(sample_horizon_-1).setZero();
 }
 
-void KinematicMPPI::optimize(const StateArrayf& state, const costmap_2d::Costmap2D &costmap, const graph_t& graph) {
+void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph) {
   if (iters_since_reset_ > 0) {
     float prediction_error = (state - predicted_next_state_).matrix().norm();
     avg_prediction_error_ = (avg_prediction_error_ * (iters_since_reset_-1) + prediction_error) / iters_since_reset_;
@@ -204,39 +204,33 @@ GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost)
   return min_node;
 }
 
-ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Costmap2D &costmap, const graph_t& graph) {
+ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
-  Array2Xf posns = states.topRows(2);
-  ArrayXf yaws = states.row(2);
 
   ArrayXf terrain_flat_inflated;
   ArrayXf terrain_flat_lethal;
-  terrain_flat_inflated.resize(posns.outerSize());
-  terrain_flat_lethal.resize(posns.outerSize());
+  terrain_flat_inflated.resize(states.outerSize());
+  terrain_flat_lethal.resize(states.outerSize());
   terrain_flat_inflated.setZero();
   terrain_flat_lethal.setZero();
   unsigned int mx, my;
-  for (int i = 0; i < posns.outerSize(); i++) {
+  Eigen::Array<int,Eigen::Dynamic,Eigen::Dynamic> map_posns;
+  map_posns.resize(3, states.outerSize());
+  // TODO arguably we should use obstacle-padding, not clamp-padding
+  map_posns.row(0) = ((states.row(0)-MIN_X) / COST_RESOLUTION_XY).cast<int>().max(0).min(COST_DIM_X-1);
+  map_posns.row(1) = ((states.row(1)-MIN_Y) / COST_RESOLUTION_XY).cast<int>().max(0).min(COST_DIM_Y-1);
+  map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH).cast<int>();
+  for (int i = 0; i < states.outerSize(); i++) {
+    map_posns(2,i) = map_posns(2,i) % COST_DIM_TH;
+  }
+  map_posns.row(2) += COST_DIM_TH * map_posns.row(1);
+  for (int i = 0; i < states.outerSize(); i++) {
     unsigned char raw_cost;
-    if (costmap.worldToMap(posns(0, i), posns(1, i), mx, my)) {
-      raw_cost = costmap.getCost(mx, my);
-      if (raw_cost == costmap_2d::NO_INFORMATION) {
-        // The costmap has a *lot* of unknown spaces; we don't want to penalize this heavily.
-        raw_cost = UNKNOWN_PENALTY;
-      }
-    } else {
-      raw_cost = UNKNOWN_PENALTY;
-    }
-    float float_cost = static_cast<float>(raw_cost)/255;
-    if (float_cost >= 0.5) {
+    if (costmap(map_posns(0,i), map_posns(2,i))) {
       terrain_flat_lethal(i) = 1000000.f;
-    } else {
-      terrain_flat_inflated(i) = float_cost;
     }
   }
-  //ArrayXf terminal_cost;
-  //terminal_cost.resize(posns.outerSize());
 
   if (MPPI_CHOOSE_OWN_GOAL) {
     double t_cost;
@@ -266,7 +260,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const costmap_2d::Cost
   // Subtract the minimum distance so that even when the robot is very far from the goal,
   // the distance cost will be roughly balanced with the obstacle/speed costs.
   //dist2goal_flat -= dist2goal_flat.minCoeff();
-  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal+terrain_flat_inflated)
+  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal)
                        + dist2goal_flat;
                        //+ speed_costs_flat
                        //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat

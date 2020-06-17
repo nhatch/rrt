@@ -6,7 +6,7 @@
 #include "collision.h"
 
 const double CONTROL_HZ = 30;
-const double SPEED = 1.0;
+const double SPEED = 2.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 const bool MPPI_CHOOSE_OWN_GOAL = true;
 
