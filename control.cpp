@@ -13,9 +13,6 @@
 #include "graphics.h"
 #include "control.h"
 
-const double MOTION_NOISE = 0.005;
-const bool RENDER_CONFIG_SPACE = false;
-
 GraphNode *next_stepwise_target;
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,

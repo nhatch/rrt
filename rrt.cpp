@@ -255,7 +255,9 @@ int main(int argc, char *argv[]) {
   doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
-    //doControl(path, task, costmap, graph, min_graph, true, false);
+    if (!FULL_COSTMAP) {
+      doControl(path, task, costmap, graph, min_graph, true, false);
+    }
   }
   for (int i = 0; i < N_TRIALS; i++) {
     doControl(path, task, costmap, graph, min_graph, false, false);
