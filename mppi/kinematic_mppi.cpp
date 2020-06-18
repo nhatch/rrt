@@ -126,7 +126,7 @@ SampledTrajs KinematicMPPI::sampleTrajs(const StateArrayf& state) {
 
 ArrayXXf KinematicMPPI::sampleControlTrajs() {
   const int zero_rollouts = rollouts_ / 20;
-  const int low_std_rollouts = 0;
+  const int low_std_rollouts = rollouts_ / 5;
   const int wild_rollouts = rollouts_ / 3;
   MatrixXf dU_norm_flat = MatrixXf::NullaryExpr(CONTROL_DIM*sample_horizon_, rollouts_, randN_);
   ArrayXXf U_trajs = (control_sqrt_cov_ * dU_norm_flat).array();
@@ -249,9 +249,6 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     nearest_ = goal_;
   }
 
-  ArrayXXf posn_errs = states.colwise() - goal_;
-  posn_errs.row(2) *= theta_weight_;
-  ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
   //ArrayXf speeds_flat = states.bottomRows(2).matrix().colwise().norm().array();
   //ArrayXf dist2goal_sq_flat = dist2goal_flat * dist2goal_flat;
   //ArrayXf speeds_sq_flat = speeds_flat * speeds_flat;
@@ -262,11 +259,17 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   // Subtract the minimum distance so that even when the robot is very far from the goal,
   // the distance cost will be roughly balanced with the obstacle/speed costs.
   //dist2goal_flat -= dist2goal_flat.minCoeff();
-  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal)
-                       + dist2goal_flat;
+  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal);
+                       //+ dist2goal_flat;
                        //+ speed_costs_flat
                        //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
 
+  if (!FULL_COSTMAP) {
+    ArrayXXf posn_errs = states.colwise() - goal_;
+    posn_errs.row(2) *= theta_weight_;
+    ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
+    costs_flat += dist2goal_flat;
+  }
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
   ArrayXf traj_costs = costs.colwise().sum();
   return traj_costs;

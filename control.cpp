@@ -20,15 +20,11 @@ GraphNode *next_stepwise_target;
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic) {
 
-  if (deterministic) {
-    adaptive_carrot = false;
-  }
-
   Config target = next_stepwise_target->config;
   double d = current->distanceFrom(target);
   if (d < 3*MAX_DIFF) {
     if (next_stepwise_target->parent == nullptr) return true;
-    if (!adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
+    if (deterministic || !adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
   }
 
   Config next;
@@ -60,7 +56,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
 void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
   Config current = path->config;
-  if (adaptive_carrot) {
+  if (!deterministic && (adaptive_carrot || FULL_COSTMAP)) {
     next_stepwise_target = graph[0];
   } else {
     next_stepwise_target = path->parent;

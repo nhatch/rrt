@@ -21,7 +21,7 @@ double minDistance(const GraphNode *node, const Config &config) {
 /* Uses split nodes. */
 /* Assumes `node` has a parent (i.e. is not root) */
 double minDistance(const GraphNode *node, const Config &config,
-    bool *needsSplitNode, Config *splitConfig) {
+    bool *needsSplitNode, Config *splitConfig, double *baseCost) {
   const Config &c0 = node->parent->config;
   const Config &c1 = node->config;
   Config line = c1 - c0;
@@ -30,12 +30,18 @@ double minDistance(const GraphNode *node, const Config &config,
    * I don't really understand how to solve the minimum distance problem on a torus. */
   Config targetDiff = config - c0;
   double alpha = line * targetDiff / (line * line); // TODO precedence?
-  if (alpha <= 0. || alpha >= 1.) {
+  if (alpha <= 0.) {
     *needsSplitNode = false;
+    *baseCost = node->parent->cost;
+    return config.distanceFrom(c0);
+  } else if (alpha >= 1.) {
+    *needsSplitNode = false;
+    *baseCost = node->cost;
     return config.distanceFrom(c1);
   } else {
     *needsSplitNode = true;
     *splitConfig = c0 + line * alpha;
+    *baseCost = c0.distanceFrom(*splitConfig) + node->parent->cost;
     return config.distanceFrom(*splitConfig);
   }
 }
@@ -208,14 +214,38 @@ int main(int argc, char *argv[]) {
   ArrayXXb costmap;
   costmap.fill(0);
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
+  int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
   for (unsigned int i = 0; i < COST_DIM_X; i++) {
     for (unsigned int j = 0; j < COST_DIM_Y; j++) {
       for (unsigned int k = 0; k < COST_DIM_TH; k++) {
+        if (counter % 10000 == 0) {
+          std::cout << counter << " of " << total << std::endl;
+        }
+        counter++;
         Config c(i*COST_RESOLUTION_XY + MIN_X,
                  j*COST_RESOLUTION_XY + MIN_Y,
                  k*COST_RESOLUTION_TH);
         if (collides(c, task, BALL_RADIUS)) {
           costmap(i, j*COST_DIM_TH + k) = 255;
+        } else if (FULL_COSTMAP) {
+          // Find nearest point on existing graph
+          Config splitConfig;
+          bool needsSplitNode;
+          double min_dist = 10000.f;
+          double base_cost, cost;
+          GraphNode *existingNode;
+          // use min_graph instead of graph for computational reasons
+          for (GraphNode *node : min_graph) {
+            if (!node->parent)
+              continue;
+            double d = minDistance(node, c, &needsSplitNode, &splitConfig, &base_cost);
+            if (d < min_dist) {
+              min_dist = d;
+              cost = base_cost + d;
+            }
+          }
+          double MAX_COST = 10.0; // TODO 10 might be too small
+          costmap(i, j*COST_DIM_TH + k) = (uint8_t) (cost / MAX_COST * 255.0);
         }
       }
     }
@@ -225,7 +255,7 @@ int main(int argc, char *argv[]) {
   doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
-    doControl(path, task, costmap, graph, min_graph, true, false);
+    //doControl(path, task, costmap, graph, min_graph, true, false);
   }
   for (int i = 0; i < N_TRIALS; i++) {
     doControl(path, task, costmap, graph, min_graph, false, false);
