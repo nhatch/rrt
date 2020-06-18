@@ -102,7 +102,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 
   if (PLAIN_RRT) {
     bool noCollision;
-    maxConfig(existingNode->config, steered, task, &noCollision);
+    maxConfig(existingNode->config, steered, task, BALL_RADIUS, &noCollision);
     if (noCollision) {
       children.push_back(existingNode);
       costs.push_back(0.0);
@@ -118,7 +118,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       double distance = steered.distanceFrom(node->config);
       if (distance < rrt_star_rad) {
         bool noCollision;
-        maxConfig(node->config, steered, task, &noCollision);
+        maxConfig(node->config, steered, task, BALL_RADIUS, &noCollision);
         if (noCollision) {
           children.push_back(node);
           // TODO can the cost be different from the distance?
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
         Config c(i*COST_RESOLUTION_XY + MIN_X,
                  j*COST_RESOLUTION_XY + MIN_Y,
                  k*COST_RESOLUTION_TH);
-        if (collides(c, task)) {
+        if (collides(c, task, BALL_RADIUS)) {
           costmap(i, j*COST_DIM_TH + k) = true;
         }
       }

@@ -8,7 +8,7 @@
  * with a bunch of balls and checking each ball for collisions at
  * small intervals along the trajectory. */
 
-bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1) {
+bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1, double clearance) {
   // TODO Precalculate offset and normal
   point2d_t normal {p0[1] - p1[1], p1[0] - p0[0]};
   double norm = pow(pow(normal[0], 2) + pow(normal[1], 2), 0.5);
@@ -16,10 +16,10 @@ bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1) {
   normal[1] /= norm;
   double offset = normal[0]*p0[0] + normal[1]*p0[1];
   double iprod = normal[0]*query[0] + normal[1]*query[1];
-  return (iprod - offset > BALL_RADIUS);
+  return (iprod - offset > clearance);
 }
 
-bool collides(const Config &config, const Task &task) {
+bool collides(const Config &config, const Task &task, double clearance) {
   balls_t balls = config.getBalls();
   for (obstacle_t obs : task.obstacles) {
     for (point2d_t ball : balls) {
@@ -27,7 +27,7 @@ bool collides(const Config &config, const Task &task) {
       for (size_t i = 0; possibleCollision && i < obs.size(); i++) {
         point2d_t p0 = obs[i];
         point2d_t p1 = (i == obs.size()-1) ? obs[0] : obs[i+1];
-        if (leftOf(ball, p0, p1))
+        if (leftOf(ball, p0, p1, clearance))
           possibleCollision = false;
       }
       if (possibleCollision)
@@ -37,7 +37,7 @@ bool collides(const Config &config, const Task &task) {
   return false;
 }
 
-Config maxConfig(const Config &c0, const Config &c1, const Task &task, bool *noCollision) {
+Config maxConfig(const Config &c0, const Config &c1, const Task &task, double clearance, bool *noCollision) {
   double d = c0.distanceFrom(c1);
   Config line = c1 - c0;
   // Given a non-colliding configuration (with some margin BALL_RADIUS),
@@ -50,7 +50,7 @@ Config maxConfig(const Config &c0, const Config &c1, const Task &task, bool *noC
   Config current = c0;
   for (int i=1; i < n_frames+1; i++) {
     Config next = c0 + line * (double(i)/n_frames);
-    if (collides(next, task)) {
+    if (collides(next, task, clearance)) {
       *noCollision = false;
       return current;
     }

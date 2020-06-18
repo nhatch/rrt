@@ -14,7 +14,7 @@ rrt.o: rrt.cpp rrt.h graphics.h
 control.o: control.cpp control.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.o: %.cpp %.h
+%.o: %.cpp %.h *.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:

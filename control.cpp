@@ -105,7 +105,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
     path_cost += prev.distanceFrom(current);
     n_steps += 1;
-    if (collides(current, task)) {
+    if (collides(current, task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";
     }
     gettimeofday(&tp1, NULL);
