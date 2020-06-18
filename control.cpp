@@ -13,6 +13,8 @@
 #include "graphics.h"
 #include "control.h"
 
+const double MOTION_NOISE = 0.008;
+
 GraphNode *next_stepwise_target;
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
@@ -105,9 +107,13 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
     path_cost += prev.distanceFrom(current);
     n_steps += 1;
+
+    Config noise = Config::randConfig() * MOTION_NOISE;
+    current = current + noise;
     if (collides(current, task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";
     }
+
     gettimeofday(&tp1, NULL);
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
