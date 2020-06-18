@@ -84,7 +84,7 @@ class KinematicMPPI {
      * @param state The current state of the system.
      * @param costmap The 2D map used to calculate trajectory costs.
      */
-    void optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph);
+    void optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph, bool adaptive_carrot);
 
     /**
      * @brief Rolls out nominal control sequence.
@@ -167,7 +167,7 @@ class KinematicMPPI {
      * @param costmap The 2D map used to calculate trajectory costs.
      * @return The corresponding costs.
      */
-    ArrayXf computeCost(SampledTrajs& samples, const ArrayXXb& costmap, const graph_t &graph);
+    ArrayXf computeCost(SampledTrajs& samples, const ArrayXXb& costmap, const graph_t &graph, bool adaptive_carrot);
 
     /**
      * @brief Updates the control sequence according to the MPPI update law.

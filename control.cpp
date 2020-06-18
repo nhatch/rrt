@@ -16,39 +16,49 @@
 GraphNode *next_stepwise_target;
 
 bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
-    const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap) {
+    const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic) {
+
+  if (deterministic) {
+    adaptive_carrot = false;
+  }
+
   Config target = next_stepwise_target->config;
   double d = current->distanceFrom(target);
   if (d < 3*MAX_DIFF) {
     if (next_stepwise_target->parent == nullptr) return true;
-    if (!MPPI_CHOOSE_OWN_GOAL) next_stepwise_target = next_stepwise_target->parent;
+    if (!adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
   }
 
-  ControlArrayf u, v;
-  StateArrayf x, g;
-  x << current->x, current->y, current->theta;
-
-  if (!MPPI_CHOOSE_OWN_GOAL) {
-    g << target.x, target.y, target.theta;
-    mppi.setGoal(g);
+  Config next;
+  if (deterministic) {
+    double alpha = MAX_DIFF / d;
+    Config line = target - (*current);
+    next = (*current) + line * alpha;
   }
+  else
+  {
+    ControlArrayf u, v;
+    StateArrayf x, g;
+    x << current->x, current->y, current->theta;
 
-  mppi.optimize(x, costmap, graph);
-  u = mppi.pop(x);
-  u(2) /= pow(THETA_WEIGHT, 0.5);
-  Config next = (*current) + Config(u(0), u(1), u(2));
+    if (!adaptive_carrot) {
+      g << target.x, target.y, target.theta;
+      mppi.setGoal(g);
+    }
 
-  //double alpha = MAX_DIFF / d;
-  //Config line = target - (*current);
-  //Config next = (*current) + line * alpha;
+    mppi.optimize(x, costmap, graph, adaptive_carrot);
+    u = mppi.pop(x);
+    u(2) /= pow(THETA_WEIGHT, 0.5);
+    next = (*current) + Config(u(0), u(1), u(2));
+  }
 
   *current = next;
   return false;
 }
 
-void doControl(const GraphNode *path, const Task &task, const graph_t &graph, const graph_t &min_graph) {
+void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
   Config current = path->config;
-  if (MPPI_CHOOSE_OWN_GOAL) {
+  if (adaptive_carrot) {
     next_stepwise_target = graph[0];
   } else {
     next_stepwise_target = path->parent;
@@ -59,30 +69,15 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph, co
 
   MPPILocalPlannerConfig mppi_config;
   mppi_config.theta_weight = pow(THETA_WEIGHT, 0.5);
+  mppi_config.mppi_seed = rand();
   StickMPPI mppi(mppi_config);
   Array3f goal;
   goal << 0., 0., 0.;
-
-  std::cout << "Making costmap..." << std::flush;
   mppi.reset();
   mppi.setGoal(goal);
-  ArrayXXb costmap;
-  costmap.fill(false);
-  costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
-  for (unsigned int i = 0; i < COST_DIM_X; i++) {
-    for (unsigned int j = 0; j < COST_DIM_Y; j++) {
-      for (unsigned int k = 0; k < COST_DIM_TH; k++) {
-        Config c(i*COST_RESOLUTION_XY + MIN_X,
-                 j*COST_RESOLUTION_XY + MIN_Y,
-                 k*COST_RESOLUTION_TH);
-        if (collides(c, task)) {
-          costmap(i, j*COST_DIM_TH + k) = true;
-        }
-      }
-    }
-  }
-  std::cout << "done.\n";
 
+  double path_cost = 0.0;
+  int n_steps = 0;
   while (!done) {
     gettimeofday(&tp0, NULL);
     StateArrayf x;
@@ -106,11 +101,18 @@ void doControl(const GraphNode *path, const Task &task, const graph_t &graph, co
     }
     doneDrawingStuff();
 
-    done = getNextConfig(&current, path, task, graph, mppi, costmap);
+    Config prev = current;
+    done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
+    path_cost += prev.distanceFrom(current);
+    n_steps += 1;
+    if (collides(current, task)) {
+      std::cout << "YOU DIED!!!!!!\n";
+    }
     gettimeofday(&tp1, NULL);
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
     if (desiredUsecs > elapsedUsecs)
       usleep(desiredUsecs - elapsedUsecs);
   }
+  std::cout << path_cost << "," << n_steps << std::endl;
 }

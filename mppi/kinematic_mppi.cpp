@@ -97,7 +97,7 @@ void KinematicMPPI::shift(const StateArrayf& state) {
   U_.col(sample_horizon_-1).setZero();
 }
 
-void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph) {
+void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph, bool adaptive_cost) {
   if (iters_since_reset_ > 0) {
     float prediction_error = (state - predicted_next_state_).matrix().norm();
     avg_prediction_error_ = (avg_prediction_error_ * (iters_since_reset_-1) + prediction_error) / iters_since_reset_;
@@ -108,8 +108,8 @@ void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, 
     SampledTrajs samples = sampleTrajs(state);
     recent_samples_ = samples; // for debugging
     nominal_traj_ = { rolloutNominalSeq(state), U_ };
-    nominal_cost_ = computeCost(nominal_traj_, costmap, graph)(0);
-    ArrayXf traj_costs = computeCost(samples, costmap, graph);
+    nominal_cost_ = computeCost(nominal_traj_, costmap, graph, adaptive_cost)(0);
+    ArrayXf traj_costs = computeCost(samples, costmap, graph, adaptive_cost);
     updateControlSeq(samples.U_trajs, traj_costs);
   }
 }
@@ -204,7 +204,7 @@ GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost)
   return min_node;
 }
 
-ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph) {
+ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph, bool adaptive_carrot) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
 
@@ -217,10 +217,9 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   unsigned int mx, my;
   Eigen::Array<int,Eigen::Dynamic,Eigen::Dynamic> map_posns;
   map_posns.resize(3, states.outerSize());
-  // TODO arguably we should use obstacle-padding, not clamp-padding
-  map_posns.row(0) = ((states.row(0)-MIN_X) / COST_RESOLUTION_XY).cast<int>().max(0).min(COST_DIM_X-1);
-  map_posns.row(1) = ((states.row(1)-MIN_Y) / COST_RESOLUTION_XY).cast<int>().max(0).min(COST_DIM_Y-1);
-  map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH).cast<int>();
+  map_posns.row(0) = ((states.row(0)-MIN_X) / COST_RESOLUTION_XY + 0.5).cast<int>().max(0).min(COST_DIM_X-1);
+  map_posns.row(1) = ((states.row(1)-MIN_Y) / COST_RESOLUTION_XY + 0.5).cast<int>().max(0).min(COST_DIM_Y-1);
+  map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH + 0.5).cast<int>();
   for (int i = 0; i < states.outerSize(); i++) {
     map_posns(2,i) = map_posns(2,i) % COST_DIM_TH;
   }
@@ -232,7 +231,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     }
   }
 
-  if (MPPI_CHOOSE_OWN_GOAL) {
+  if (adaptive_carrot) {
     double t_cost;
     StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
     GraphNode *node = nearestNode(graph, x, &t_cost);

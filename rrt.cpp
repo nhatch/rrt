@@ -177,8 +177,8 @@ void destroyGraph(graph_t *graph) {
 }
 
 int main(int argc, char *argv[]) {
-  std::cout.precision(2);
-  std::cout << std::fixed;
+  //std::cout.precision(2);
+  //std::cout << std::fixed;
   unsigned int seed = std::time(nullptr) % 100000;
   if (argc > 1) {
     std::istringstream ss {argv[1]};
@@ -204,7 +204,32 @@ int main(int argc, char *argv[]) {
     curr = curr->parent;
   }
 
-  doControl(path, task, graph, min_graph);
+  std::cout << "Making costmap..." << std::flush;
+  ArrayXXb costmap;
+  costmap.fill(false);
+  costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
+  for (unsigned int i = 0; i < COST_DIM_X; i++) {
+    for (unsigned int j = 0; j < COST_DIM_Y; j++) {
+      for (unsigned int k = 0; k < COST_DIM_TH; k++) {
+        Config c(i*COST_RESOLUTION_XY + MIN_X,
+                 j*COST_RESOLUTION_XY + MIN_Y,
+                 k*COST_RESOLUTION_TH);
+        if (collides(c, task)) {
+          costmap(i, j*COST_DIM_TH + k) = true;
+        }
+      }
+    }
+  }
+  std::cout << "done.\n";
+
+  doControl(path, task, costmap, graph, min_graph, false, true);
+  int N_TRIALS = 2;
+  for (int i = 0; i < N_TRIALS; i++) {
+    doControl(path, task, costmap, graph, min_graph, true, false);
+  }
+  for (int i = 0; i < N_TRIALS; i++) {
+    doControl(path, task, costmap, graph, min_graph, false, false);
+  }
 
   destroyGraph(&graph);
   return 0;
