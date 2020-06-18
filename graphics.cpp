@@ -123,6 +123,20 @@ void drawGraph(const graph_t &graph, const Task &task) {
   drawTask(task);
 }
 
+sf::Texture render(const graph_t &graph, const Task &task, const ArrayXXb& costmap) {
+  drawGraph(graph, task);
+  sf::Texture tex;
+  if (!tex.create(WINDOW_SIDE, WINDOW_SIDE)) {
+    std::cout << "Texture creation failed!\n";
+  }
+  tex.update(window);
+  return tex;
+}
+
+void drawTexture(const sf::Texture& tex) {
+  window.draw(sf::Sprite(tex));
+}
+
 void doneDrawingStuff() {
   window.display();
 }

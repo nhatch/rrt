@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
   const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
   const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
-  Task task {start, end, {obs1, obs2}};
+  Task task {start, end, {obs1}};//, obs2}};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
   graph_t graph {g_root};
   GraphNode *path = search(start, graph, task);
@@ -252,13 +252,15 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "done.\n";
 
-  doControl(path, task, costmap, graph, min_graph, false, true);
+  sf::Texture rendered_costmap = render(min_graph, task, costmap);
+
+  doControl(path, task, costmap, rendered_costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
-    //doControl(path, task, costmap, graph, min_graph, true, false);
+    //doControl(path, task, costmap, rendered_costmap, graph, min_graph, true, false);
   }
   for (int i = 0; i < N_TRIALS; i++) {
-    doControl(path, task, costmap, graph, min_graph, false, false);
+    doControl(path, task, costmap, rendered_costmap, graph, min_graph, false, false);
   }
 
   destroyGraph(&graph);
