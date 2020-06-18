@@ -252,18 +252,13 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "done.\n";
 
-  std::vector<sf::Texture> renders({});
-  for (int i = 0; i < COST_DIM_TH; i++) {
-    renders.push_back(render(costmap, i));
-  }
-
-  doControl(path, task, costmap, renders[0], graph, min_graph, false, true);
+  doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
-    //doControl(path, task, costmap, renders[0], graph, min_graph, true, false);
+    //doControl(path, task, costmap, graph, min_graph, true, false);
   }
   for (int i = 0; i < N_TRIALS; i++) {
-    doControl(path, task, costmap, renders[0], graph, min_graph, false, false);
+    doControl(path, task, costmap, graph, min_graph, false, false);
   }
 
   destroyGraph(&graph);

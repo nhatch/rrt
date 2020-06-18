@@ -14,6 +14,7 @@
 #include "control.h"
 
 const double MOTION_NOISE = 0.005;
+const bool RENDER_CONFIG_SPACE = false;
 
 GraphNode *next_stepwise_target;
 
@@ -54,7 +55,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   return false;
 }
 
-void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const sf::Texture &rendered_costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
+void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
   Config current = path->config;
   if (!deterministic && (adaptive_carrot || FULL_COSTMAP)) {
     next_stepwise_target = graph[0];
@@ -74,6 +75,14 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   mppi.reset();
   mppi.setGoal(goal);
 
+  maps_t renders({});
+  sf::Texture task_space_render = render(min_graph, task);
+  if (RENDER_CONFIG_SPACE) {
+    for (int i = 0; i < COST_DIM_TH; i++) {
+      renders.push_back(render(costmap, i));
+    }
+  }
+
   double path_cost = 0.0;
   int n_steps = 0;
   while (!done) {
@@ -81,19 +90,27 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     StateArrayf x;
     x << current.x, current.y, current.theta;
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
-    drawTexture(rendered_costmap);
-    Config goal(mppi.goal_(0), mppi.goal_(1), mppi.goal_(2));
-    drawConfig(goal, sf::Color(0, 0, 255, 255));
-    Config nearest(mppi.nearest_(0), mppi.nearest_(1), mppi.nearest_(2));
-    drawConfig(nearest, sf::Color(255, 0, 0, 255));
+    int theta_idx = floor(current.theta / COST_RESOLUTION_TH + 0.5);
+    theta_idx = theta_idx % COST_DIM_TH;
+    if (RENDER_CONFIG_SPACE) {
+      drawTexture(renders[theta_idx]);
+    } else {
+      drawTexture(task_space_render);
+    }
+    if (!deterministic) {
+      Config goal(mppi.goal_(0), mppi.goal_(1), mppi.goal_(2));
+      drawConfig(goal, sf::Color(0, 0, 255, 255), RENDER_CONFIG_SPACE);
+      Config nearest(mppi.nearest_(0), mppi.nearest_(1), mppi.nearest_(2));
+      drawConfig(nearest, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
+    }
     for (int i = 0; i < seq.cols(); i++) {
       if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
         Config conf(x(0), x(1), x(2));
         if (i == 0) {
-          drawConfig(conf, sf::Color(0, 255, 0, 255));
+          drawConfig(conf, sf::Color(0, 255, 0, 255), RENDER_CONFIG_SPACE);
         } else {
-          drawConfig(conf, sf::Color(128, 200, 128, 64));
+          drawConfig(conf, sf::Color(128, 200, 128, 64), RENDER_CONFIG_SPACE);
         }
       }
     }

@@ -46,21 +46,30 @@ void clear() {
   window.clear(sf::Color::White);
 }
 
-void drawConfig(const Config &config, sf::Color color) {
+void drawBall(point2d_t& ball, double pixelRadius, sf::Color color) {
+  sf::CircleShape circle(pixelRadius);
+  circle.setFillColor(color);
+  sf::Vector2f pos = toVector(ball);
+  pos.x -= pixelRadius;
+  pos.y -= pixelRadius;
+  circle.setPosition(pos);
+  window.draw(circle);
+}
+
+void drawConfig(const Config &config, sf::Color color, bool point_only) {
   balls_t balls = config.getBalls();
 
-  for (point2d_t ball : balls) {
-    double pixelRadius = BALL_RADIUS * scale_x;
-    sf::CircleShape circle(pixelRadius);
-    circle.setFillColor(color);
-    sf::Vector2f pos = toVector(ball);
-    pos.x -= pixelRadius;
-    pos.y -= pixelRadius;
-    circle.setPosition(pos);
-    window.draw(circle);
-  }
+  if (point_only) {
+    point2d_t ball = balls[(N_BALLS-1)/2];
+    drawBall(ball, 5, color);
+  } else {
+    for (point2d_t ball : balls) {
+      double pixelRadius = BALL_RADIUS * scale_x;
+      drawBall(ball, pixelRadius, color);
+    }
 
-  drawLine(balls[0], balls[N_BALLS-1]);
+    drawLine(balls[0], balls[N_BALLS-1]);
+  }
 }
 
 void drawTask(const Task &task) {
@@ -154,9 +163,11 @@ sf::Texture render(const graph_t &graph, const Task &task) {
     std::cout << "Texture creation failed!\n";
   }
   tex.update(window);
+  return tex;
 }
 
 void drawTexture(const sf::Texture& tex) {
+  clear();
   window.draw(sf::Sprite(tex));
 }
 
