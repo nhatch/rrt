@@ -217,9 +217,9 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   unsigned int mx, my;
   Eigen::Array<int,Eigen::Dynamic,Eigen::Dynamic> map_posns;
   map_posns.resize(3, states.outerSize());
-  map_posns.row(0) = ((states.row(0)-MIN_X) / COST_RESOLUTION_XY + 0.5).cast<int>().max(0).min(COST_DIM_X-1);
-  map_posns.row(1) = ((states.row(1)-MIN_Y) / COST_RESOLUTION_XY + 0.5).cast<int>().max(0).min(COST_DIM_Y-1);
-  map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH + 0.5).cast<int>();
+  map_posns.row(0) = ((states.row(0)-MIN_X) / COST_RESOLUTION_XY).floor().cast<int>().max(0).min(COST_DIM_X-1);
+  map_posns.row(1) = ((states.row(1)-MIN_Y) / COST_RESOLUTION_XY).floor().cast<int>().max(0).min(COST_DIM_Y-1);
+  map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH + 0.5).floor().cast<int>();
   for (int i = 0; i < states.outerSize(); i++) {
     map_posns(2,i) = map_posns(2,i) % COST_DIM_TH;
   }

@@ -123,14 +123,37 @@ void drawGraph(const graph_t &graph, const Task &task) {
   drawTask(task);
 }
 
-sf::Texture render(const graph_t &graph, const Task &task, const ArrayXXb& costmap) {
+sf::Texture render(const ArrayXXb& costmap, int theta_offset) {
+  uint8_t pixels[4*WINDOW_SIDE*WINDOW_SIDE];
+  for (int i = 0; i < WINDOW_SIDE; i++) {
+    for (int j = 0; j < WINDOW_SIDE; j++) {
+      int start = i*WINDOW_SIDE*4+j*4;
+      double x = (j - offset_x + 0.5) / scale_x;
+      double y = (i - offset_y + 0.5) / scale_y;
+
+      int cm_x = floor((x - MIN_X) / COST_RESOLUTION_XY);
+      int cm_y = floor((y - MIN_Y) / COST_RESOLUTION_XY);
+
+      uint8_t val = costmap(cm_x, cm_y*COST_DIM_TH + theta_offset);
+      pixels[start] = pixels[start+1] = pixels[start+2] = 255 - val;
+      pixels[start+3] = 255;
+    }
+  }
+  sf::Texture tex;
+  if (!tex.create(WINDOW_SIDE, WINDOW_SIDE)) {
+    std::cout << "Texture creation failed!\n";
+  }
+  tex.update(pixels);
+  return tex;
+}
+
+sf::Texture render(const graph_t &graph, const Task &task) {
   drawGraph(graph, task);
   sf::Texture tex;
   if (!tex.create(WINDOW_SIDE, WINDOW_SIDE)) {
     std::cout << "Texture creation failed!\n";
   }
   tex.update(window);
-  return tex;
 }
 
 void drawTexture(const sf::Texture& tex) {
