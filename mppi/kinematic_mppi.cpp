@@ -226,8 +226,11 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   map_posns.row(2) += COST_DIM_TH * map_posns.row(1);
   for (int i = 0; i < states.outerSize(); i++) {
     unsigned char raw_cost;
-    if (costmap(map_posns(0,i), map_posns(2,i))) {
+    raw_cost = costmap(map_posns(0,i), map_posns(2,i));
+    if (raw_cost == 255) {
       terrain_flat_lethal(i) = 1000000.f;
+    } else {
+      terrain_flat_lethal(i) = (float)raw_cost / 255.f;
     }
   }
 

@@ -18,11 +18,11 @@ constexpr double BALL_RADIUS = LENGTH / (N_BALLS - 1);
 // that collisions will be detected. (I think.)
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
-constexpr double THETA_WEIGHT = 2.;
+constexpr double THETA_WEIGHT = 0.7;
 
 using point2d_t = std::array<double,2>;
 using balls_t = std::array<point2d_t,N_BALLS>;
-using ArrayXXb = Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic>;
+using ArrayXXb = Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic>;
 
 class Config {
 public:

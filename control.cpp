@@ -13,7 +13,7 @@
 #include "graphics.h"
 #include "control.h"
 
-const double MOTION_NOISE = 0.008;
+const double MOTION_NOISE = 0.005;
 
 GraphNode *next_stepwise_target;
 

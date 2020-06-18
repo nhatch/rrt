@@ -8,10 +8,10 @@ SFML_LINK=-lsfml-graphics -lsfml-window -lsfml-system
 target: $(DEPS)
 	$(CC) $(DEPS) $(ROS_LINK) $(SFML_LINK)
 
-rrt.o: rrt.cpp rrt.h graphics.h
+rrt.o: rrt.cpp *.h mppi/*.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-control.o: control.cpp control.h mppi/*.h
+control.o: control.cpp *.h mppi/*.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.cpp %.h *.h mppi/*.h

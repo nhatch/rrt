@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Making costmap..." << std::flush;
   ArrayXXb costmap;
-  costmap.fill(false);
+  costmap.fill(0);
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   for (unsigned int i = 0; i < COST_DIM_X; i++) {
     for (unsigned int j = 0; j < COST_DIM_Y; j++) {
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
                  j*COST_RESOLUTION_XY + MIN_Y,
                  k*COST_RESOLUTION_TH);
         if (collides(c, task, BALL_RADIUS)) {
-          costmap(i, j*COST_DIM_TH + k) = true;
+          costmap(i, j*COST_DIM_TH + k) = 255;
         }
       }
     }
