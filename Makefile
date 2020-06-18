@@ -11,10 +11,10 @@ target: $(DEPS)
 rrt.o: rrt.cpp rrt.h graphics.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-control.o: control.cpp control.h
+control.o: control.cpp control.h mppi/*.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.o: %.cpp %.h *.h
+%.o: %.cpp %.h *.h mppi/*.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
