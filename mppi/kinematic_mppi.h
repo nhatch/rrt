@@ -115,7 +115,7 @@ class KinematicMPPI {
     float theta_weight_;
 
     void shiftControlHistory();
-    MatrixXf buildTridiag(float std1, float std2, float superdiag);
+    MatrixXf buildTridiag(ControlArrayf &stds, float superdiag);
 
     /**
      * @brief Samples trajectories from the current distribution.

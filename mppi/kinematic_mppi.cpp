@@ -33,34 +33,36 @@ KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config) {
   nominal_cost_ = 1000.f; // Some big number
   theta_weight_ = config.theta_weight;
 
-  /*
-  if (FULL_COVARIANCE) {
-    control_sqrt_cov_ = buildTridiag(config.mppi_pos_std, config.mppi_th_std, config.mppi_precision_superdiag);
-    control_sqrt_cov_wild_ = buildTridiag(0.2f, 0.2f, -5.f);
-    control_sqrt_cov_prior_ = control_sqrt_cov_;
-  } else {
-  */
-  Eigen::Vector3f stds;
+  ControlArrayf stds;
   stds << config.mppi_pos_std, config.mppi_pos_std, config.mppi_th_std;
-  control_sqrt_cov_ = stds.replicate(sample_horizon_,1).asDiagonal();
+  if (FULL_COVARIANCE) {
+    control_sqrt_cov_ = buildTridiag(stds, config.mppi_precision_superdiag);
+    //control_sqrt_cov_wild_ = buildTridiag(0.2f, 0.2f, -5.f);
+    //if (LEARN_COVARIANCE) control_sqrt_cov_prior_ = control_sqrt_cov_;
+  } else {
+    control_sqrt_cov_ = stds.replicate(sample_horizon_,1).matrix().asDiagonal();
+  }
 
   U_.resize(Eigen::NoChange, sample_horizon_);
   control_history_.resize(Eigen::NoChange, lag_horizon_);
   Eigen::internal::scalar_normal_dist_op<float>::rng.seed(config.mppi_seed); // Seed the RNG
 }
 
-/*
-MatrixXf KinematicMPPI::buildTridiag(float std1, float std2, float superdiag) {
-    MatrixXf precision_sqrt(CONTROL_DIM*sample_horizon_, CONTROL_DIM*sample_horizon_);
-    precision_sqrt.setZero();
-    for (int i=0; i < horizon_; i++) {
-      precision_sqrt.block(i*CONTROL_DIM, i*CONTROL_DIM, 2, 2) << 1.f/std1, 0, 0, 1.f/std2;
-      if (i < horizon_-1)
-        precision_sqrt.block(i*CONTROL_DIM, (i+1)*CONTROL_DIM, 2, 2) << superdiag, 0, 0, superdiag;
-    }
-    return precision_sqrt.inverse();
+MatrixXf KinematicMPPI::buildTridiag(ControlArrayf &stds, float superdiag) {
+  int CD = CONTROL_DIM;
+  MatrixXf precision_sqrt(CD*sample_horizon_, CD*sample_horizon_);
+  precision_sqrt.setZero();
+  for (int i=0; i < horizon_; i++) {
+    precision_sqrt.block(i*CD, i*CD, CD, CD) << 1.f/stds(0), 0, 0,
+                                                0, 1.f/stds(1), 0,
+                                                0, 0, 1.f/stds(2);
+    if (i < horizon_-1)
+      precision_sqrt.block(i*CD, (i+1)*CD, CD, CD) << superdiag, 0, 0,
+                                                      0, superdiag, 0,
+                                                      0, 0, superdiag;
+  }
+  return precision_sqrt.inverse();
 }
-*/
 
 KinematicMPPI::~KinematicMPPI() {}
 
