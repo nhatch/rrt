@@ -7,20 +7,6 @@
 #include "rrt.h"
 #include "control.h"
 
-/**
- * State representation:
- * x = [x-position, y-position, yaw, velocity 1, velocity 2]
- *
- * Control representation:
- * If the subclass is WheelVelocityMPPI,
- * u = [left wheel velocity, right wheel velocity],
- * each limited to the range [+/-VEL_MAX], with the difference bounded by max_vel_th_.
- * If the subclass is RigidBodyVelocityMPPI,
- * u = [longitudinal velocity, yaw rate],
- * with the first element limited to the range [+/-VEL_MAX] and the second element
- * limited to the range [+/-max_vel_th_].
- */
-
 #define STATE_DIM 3
 #define CONTROL_DIM 3
 
@@ -124,7 +110,6 @@ class KinematicMPPI {
     float orientation_width_;
     float collision_cost_;
     float max_delta_v_;
-    float max_vel_th_;
     float speed_cost_threshold_;
     float speed_cost_weight_;
     float theta_weight_;

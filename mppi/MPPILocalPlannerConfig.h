@@ -18,9 +18,6 @@ struct MPPILocalPlannerConfig {
   float mppi_p_coeff = 10.f;
   float mppi_i_coeff = 1.f;
   float mppi_i_clamp = 10.f;
-  float max_accel = -1.f;
-  float max_vel_x = 1.f;
-  float max_vel_th = 1.f;
   float speed_cost_threshold = 1.f;
   float speed_cost_weight = 0.f;
   float theta_weight = 1.f;

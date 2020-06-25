@@ -30,7 +30,6 @@ KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config) {
   opt_iters_ = config.mppi_opt_iters;
   speed_cost_threshold_ = VEL_MAX * config.speed_cost_threshold;
   speed_cost_weight_ = config.speed_cost_weight;
-  max_vel_th_ = config.max_vel_th;
   nominal_cost_ = 1000.f; // Some big number
   theta_weight_ = config.theta_weight;
 
@@ -221,6 +220,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   map_posns.row(2) = ((states.row(2))       / COST_RESOLUTION_TH + 0.5).floor().cast<int>();
   for (int i = 0; i < states.outerSize(); i++) {
     map_posns(2,i) = map_posns(2,i) % COST_DIM_TH;
+    map_posns(2,i) = (map_posns(2,i) + COST_DIM_TH) % COST_DIM_TH; // Handle negative numbers, argh
   }
   map_posns.row(2) += COST_DIM_TH * map_posns.row(1);
   for (int i = 0; i < states.outerSize(); i++) {

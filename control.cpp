@@ -82,9 +82,10 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     gettimeofday(&tp0, NULL);
     StateArrayf x = current;
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
-    int theta_idx = floor(current(2) / COST_RESOLUTION_TH + 0.5);
-    theta_idx = theta_idx % COST_DIM_TH;
     if (RENDER_CONFIG_SPACE) {
+      int theta_idx = floor(current(2) / COST_RESOLUTION_TH + 0.5);
+      theta_idx = theta_idx % COST_DIM_TH;
+      theta_idx = (theta_idx + COST_DIM_TH) % COST_DIM_TH; // Handle negative numbers argh
       drawTexture(renders[theta_idx]);
     } else {
       drawTexture(task_space_render);
