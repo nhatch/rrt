@@ -1,4 +1,5 @@
 #include "stick_mppi.h"
+#include "../control.h"
 
 StickMPPI::StickMPPI(MPPILocalPlannerConfig &config)
   : KinematicMPPI(config) {
@@ -11,5 +12,12 @@ ArrayXXf StickMPPI::toRigidBodyVels(ArrayXXf U) {
 
 void StickMPPI::clamp(ArrayXXf& U) {
   Eigen::Map<ArrayXXf> U_flat(U.data(), CONTROL_DIM, rollouts_*sample_horizon_);
-  U_flat = U_flat.max(-VEL_MAX).min(VEL_MAX);
+  ArrayXf norm_sq = U_flat.row(0)*U_flat.row(0) +
+                    U_flat.row(1)*U_flat.row(1) +
+                    THETA_WEIGHT*THETA_WEIGHT*U_flat.row(2)*U_flat.row(2);
+  ArrayXf frac = pow(norm_sq, 0.5) / MAX_DIFF;
+  frac = frac.max(1.0);
+  U_flat.row(0) /= frac;
+  U_flat.row(1) /= frac;
+  U_flat.row(2) /= frac;
 }

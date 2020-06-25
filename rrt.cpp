@@ -218,8 +218,8 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Making costmap..." << std::flush;
   ArrayXXb costmap;
-  costmap.fill(0);
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
+  costmap.fill(0);
   int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
   for (unsigned int i = 0; i < COST_DIM_X; i++) {
     for (unsigned int j = 0; j < COST_DIM_Y; j++) {

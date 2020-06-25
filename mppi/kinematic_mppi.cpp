@@ -182,7 +182,7 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   */
   X_next.row(0) = X.row(0) + V.row(0);
   X_next.row(1) = X.row(1) + V.row(1);
-  X_next.row(2) = X.row(2) + V.row(2) / theta_weight_;
+  X_next.row(2) = X.row(2) + V.row(2);
   return X_next;
 }
 

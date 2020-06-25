@@ -25,16 +25,14 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     if (deterministic || !adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
   }
 
-  Config next;
+  Config command;
   if (deterministic) {
     double alpha = MAX_DIFF / d;
     Config line = diff(target, (*current));
-    next = *current;
-    next += line * alpha;
+    command = line * alpha;
   }
   else
   {
-    ControlArrayf u, v;
     StateArrayf x = *current;
 
     if (!adaptive_carrot) {
@@ -42,13 +40,11 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     }
 
     mppi.optimize(x, costmap, graph, adaptive_carrot);
-    u = mppi.pop(x);
-    u(2) /= THETA_WEIGHT;
-    next = *current;
-    next += u;
+    command = mppi.pop(x);
   }
 
-  *current = next;
+  assert(distanceFrom(command, Config::Zero()) < MAX_DIFF*1.001);
+  *current += command;
   return false;
 }
 
