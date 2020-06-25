@@ -40,13 +40,15 @@ bool collides(const Config &config, const Task &task, double clearance) {
 Config maxConfig(const Config &c0, const Config &c1, const Task &task, double clearance, bool *noCollision) {
   double d = distanceFrom(c0, c1);
   Config line = diff(c1, c0);
-  // Given a non-colliding configuration (with some margin BALL_RADIUS),
-  // the maximum distance (in configuration space)
-  // that we can travel while remaining sure we're still non-colliding.
-  // I think this is safe as long as THETA_WEIGHT >= LENGTH^2 (see config.cpp)
-  // but I haven't checked the math in detail.
-  double rate = BALL_RADIUS/2;
-  int n_frames = d/rate + 1; // Take the ceiling to be safe
+  double plane_dist = pow(line(0)*line(0) + line(1)*line(1), 0.5);
+  double angle_dist = LENGTH * 0.5 * abs(line(2));
+  double max_safe_fraction = clearance / (plane_dist + angle_dist);
+  // If we travel `max_safe_fraction` of the distance along `line`,
+  // then no part of the stick will move more than `clearance` distance.
+  // Thus, if two consecutive configs both have clearance `clearance`,
+  // then it is guaranteed that we will not collide with an obstacle
+  // while traveling between them.
+  int n_frames = 1.0/max_safe_fraction + 1; // Take the ceiling to be safe
   Config current = c0;
   for (int i=1; i < n_frames+1; i++) {
     Config next = c0 + line * (double(i)/n_frames);
