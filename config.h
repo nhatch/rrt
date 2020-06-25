@@ -18,7 +18,7 @@ constexpr double BALL_RADIUS = LENGTH / (N_BALLS - 1);
 // that collisions will be detected. (I think.)
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
-constexpr double THETA_WEIGHT = 0.7;
+constexpr double THETA_WEIGHT = 0.85;
 
 using point2d_t = std::array<double,2>;
 using balls_t = std::array<point2d_t,N_BALLS>;
@@ -30,28 +30,5 @@ Config randConfig();
 balls_t getBalls(const Config &c);
 double distanceFrom(const Config &c1, const Config &c2);
 Config diff(const Config &c1, const Config &c2);
-
-/*
-class Config {
-public:
-  double x;
-  double y;
-  double theta;
-
-  Config(double x = 0.0, double y = 0.0, double theta = 0.0);
-
-  static Config randConfig();
-
-  Config operator* (double alpha) const; // rescaling
-  Config operator+ (const Config &other) const;
-  Config operator- (const Config &other) const;
-  double operator* (const Config &other) const; // inner product
-
-  balls_t getBalls() const; // for collision detection
-
-  friend std::ostream &operator<< (std::ostream &out, const Config &c);
-  friend sf::Vector2f toVector(const Config &c); // for graphics
-};
-*/
 
 #endif

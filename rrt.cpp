@@ -32,8 +32,8 @@ double minDistance(const GraphNode *node, const Config &config,
 
   Config c3 = line;
   Config c4 = targetDiff;
-  c3(2) *= pow(THETA_WEIGHT, 0.5);
-  c4(2) *= pow(THETA_WEIGHT, 0.5);
+  c3(2) *= THETA_WEIGHT;
+  c4(2) *= THETA_WEIGHT;
   double alpha = (c3*c4).sum() / (c3*c3).sum();
 
   if (alpha <= 0.) {

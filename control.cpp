@@ -43,7 +43,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
     mppi.optimize(x, costmap, graph, adaptive_carrot);
     u = mppi.pop(x);
-    u(2) /= pow(THETA_WEIGHT, 0.5);
+    u(2) /= THETA_WEIGHT;
     next = *current;
     next += u;
   }
@@ -64,7 +64,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   double secsPerFrame = 1/CONTROL_HZ;
 
   MPPILocalPlannerConfig mppi_config;
-  mppi_config.theta_weight = pow(THETA_WEIGHT, 0.5);
+  mppi_config.theta_weight = THETA_WEIGHT;
   mppi_config.mppi_seed = rand();
   StickMPPI mppi(mppi_config);
   Array3f goal;
