@@ -78,6 +78,9 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
 
   double path_cost = 0.0;
   int n_steps = 0;
+  int collisions = 0;
+  long total_elapsed_usecs = 0;
+  bool printedWarning = false;
   while (!done) {
     gettimeofday(&tp0, NULL);
     StateArrayf x = current;
@@ -115,13 +118,23 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     current = current + noise;
     if (collides(current, task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";
+      collisions += 1;
     }
 
     gettimeofday(&tp1, NULL);
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
-    if (desiredUsecs > elapsedUsecs)
+    total_elapsed_usecs += elapsedUsecs;
+    if (desiredUsecs > elapsedUsecs) {
       usleep(desiredUsecs - elapsedUsecs);
+    } else if (!printedWarning) {
+      printedWarning = true;
+      printf("Warning: can't keep up with control freq (%ld, %ld)\n", desiredUsecs/1000, elapsedUsecs/1000);
+    }
   }
-  std::cout << path_cost << "," << n_steps << std::endl;
+  printf("Result:\n"
+         "  Path length:           %f (%d collisions)\n"
+         "  Control steps:         %d\n"
+         "  Time per control (us): %ld\n",
+      path_cost, collisions, n_steps, total_elapsed_usecs / n_steps);
 }
