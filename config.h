@@ -24,6 +24,14 @@ using point2d_t = std::array<double,2>;
 using balls_t = std::array<point2d_t,N_BALLS>;
 using ArrayXXb = Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic>;
 
+using Config = Eigen::Array<float, 1, 3>;
+
+Config randConfig();
+balls_t getBalls(const Config &c);
+double distanceFrom(const Config &c1, const Config &c2);
+Config diff(const Config &c1, const Config &c2);
+
+/*
 class Config {
 public:
   double x;
@@ -38,12 +46,12 @@ public:
   Config operator+ (const Config &other) const;
   Config operator- (const Config &other) const;
   double operator* (const Config &other) const; // inner product
-  double distanceFrom (const Config &other) const;
 
   balls_t getBalls() const; // for collision detection
 
   friend std::ostream &operator<< (std::ostream &out, const Config &c);
   friend sf::Vector2f toVector(const Config &c); // for graphics
 };
+*/
 
 #endif

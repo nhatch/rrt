@@ -20,7 +20,7 @@ bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1, doubl
 }
 
 bool collides(const Config &config, const Task &task, double clearance) {
-  balls_t balls = config.getBalls();
+  balls_t balls = getBalls(config);
   for (obstacle_t obs : task.obstacles) {
     for (point2d_t ball : balls) {
       bool possibleCollision = true;
@@ -38,8 +38,8 @@ bool collides(const Config &config, const Task &task, double clearance) {
 }
 
 Config maxConfig(const Config &c0, const Config &c1, const Task &task, double clearance, bool *noCollision) {
-  double d = c0.distanceFrom(c1);
-  Config line = c1 - c0;
+  double d = distanceFrom(c0, c1);
+  Config line = diff(c1, c0);
   // Given a non-colliding configuration (with some margin BALL_RADIUS),
   // the maximum distance (in configuration space)
   // that we can travel while remaining sure we're still non-colliding.

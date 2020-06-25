@@ -15,7 +15,7 @@ const bool PLAIN_RRT = false;
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
 double minDistance(const GraphNode *node, const Config &config) {
-  return config.distanceFrom(node->config);
+  return distanceFrom(config, node->config);
 }
 
 /* Uses split nodes. */
@@ -24,25 +24,31 @@ double minDistance(const GraphNode *node, const Config &config,
     bool *needsSplitNode, Config *splitConfig, double *baseCost) {
   const Config &c0 = node->parent->config;
   const Config &c1 = node->config;
-  Config line = c1 - c0;
+  Config line = diff(c1, c0);
   /* TODO: The number used for config.theta here might be off by a multiple of 2*pi
    * from the number that would give the optimal distance.
    * I don't really understand how to solve the minimum distance problem on a torus. */
-  Config targetDiff = config - c0;
-  double alpha = line * targetDiff / (line * line); // TODO precedence?
+  Config targetDiff = diff(config, c0);
+
+  Config c3 = line;
+  Config c4 = targetDiff;
+  c3(2) *= pow(THETA_WEIGHT, 0.5);
+  c4(2) *= pow(THETA_WEIGHT, 0.5);
+  double alpha = (c3*c4).sum() / (c3*c3).sum();
+
   if (alpha <= 0.) {
     *needsSplitNode = false;
     *baseCost = node->parent->cost;
-    return config.distanceFrom(c0);
+    return distanceFrom(config, c0);
   } else if (alpha >= 1.) {
     *needsSplitNode = false;
     *baseCost = node->cost;
-    return config.distanceFrom(c1);
+    return distanceFrom(config, c1);
   } else {
     *needsSplitNode = true;
     *splitConfig = c0 + line * alpha;
-    *baseCost = c0.distanceFrom(*splitConfig) + node->parent->cost;
-    return config.distanceFrom(*splitConfig);
+    *baseCost = distanceFrom(c0, *splitConfig) + node->parent->cost;
+    return distanceFrom(config, *splitConfig);
   }
 }
 
@@ -66,7 +72,7 @@ void value_iterate(graph_t &graph) {
 
 GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   GraphNode *existingNode = graph[0]; // root node
-  double min_dist = config.distanceFrom(existingNode->config);
+  double min_dist = distanceFrom(config, existingNode->config);
   //bool needsSplitNode = false;
   //bool bestNeedsSplitNode = false;
   //Config splitConfig {0., 0., 0.};
@@ -100,7 +106,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   double eta = 0.5;
   double steer_frac = eta / min_dist;
   if (steer_frac > 1.0) steer_frac = 1.0;
-  Config steered = (existingNode->config) + (config - existingNode->config) * steer_frac;
+  Config steered = (existingNode->config) + diff(config, existingNode->config) * steer_frac;
 
   // Build new edges (RRT*-style)
   std::vector<GraphNode *> children({});
@@ -121,7 +127,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
     if (rrt_star_rad > eta) rrt_star_rad = eta;
     //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
     for (GraphNode *node: graph) {
-      double distance = steered.distanceFrom(node->config);
+      double distance = distanceFrom(steered, node->config);
       if (distance < rrt_star_rad) {
         bool noCollision;
         maxConfig(node->config, steered, task, BALL_RADIUS, &noCollision);
@@ -161,12 +167,12 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
   GraphNode *current = graph[0];
   int iter = 0;
-  while (start.distanceFrom(current->config) > tol) {
+  while (distanceFrom(start, current->config) > tol) {
     Config c;
     if (++iter % 100 == 0) {
       c = start;
     } else {
-      c = Config::randConfig();
+      c = randConfig();
     }
     current = insert(graph, c, task);
     drawGraph(graph, task);
@@ -222,9 +228,10 @@ int main(int argc, char *argv[]) {
           std::cout << counter << " of " << total << std::endl;
         }
         counter++;
-        Config c((i+0.5)*COST_RESOLUTION_XY + MIN_X,
+        Config c;
+        c <<     (i+0.5)*COST_RESOLUTION_XY + MIN_X,
                  (j+0.5)*COST_RESOLUTION_XY + MIN_Y,
-                 k*COST_RESOLUTION_TH);
+                 k*COST_RESOLUTION_TH;
         if (collides(c, task, BALL_RADIUS)) {
           costmap(i, j*COST_DIM_TH + k) = 255;
         } else if (FULL_COSTMAP) {

@@ -21,7 +21,7 @@ sf::Vector2f toVector(const point2d_t &p) {
 }
 
 sf::Vector2f toVector(const Config &c) {
-  return sf::Vector2f(c.x*scale_x + offset_x, c.y*scale_y + offset_y);
+  return sf::Vector2f(c(0)*scale_x + offset_x, c(1)*scale_y + offset_y);
 }
 
 template <class T>
@@ -57,7 +57,7 @@ void drawBall(point2d_t& ball, double pixelRadius, sf::Color color) {
 }
 
 void drawConfig(const Config &config, sf::Color color, bool point_only) {
-  balls_t balls = config.getBalls();
+  balls_t balls = getBalls(config);
 
   if (point_only) {
     point2d_t ball = balls[(N_BALLS-1)/2];
@@ -97,9 +97,9 @@ void drawGraph(const graph_t &graph) {
 
 void animate(const Config &c0, const Config &c1, const Task &task, const graph_t &graph,
     double movementPerFrame, double secsPerFrame) {
-  double d = c0.distanceFrom(c1);
+  double d = distanceFrom(c0, c1);
   int n_movement_frames = d/movementPerFrame + 1;
-  Config line = c1 - c0;
+  Config line = diff(c1, c0);
 
   struct timeval tp0, tp1;
   for (int i=0; i < n_movement_frames; i++) {

@@ -10,7 +10,7 @@ const double CONTROL_HZ = 30;
 const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 
-const bool FULL_COSTMAP = false;
+const bool FULL_COSTMAP = true;
 const double MOTION_NOISE = 0.005;
 const bool RENDER_CONFIG_SPACE = false;
 

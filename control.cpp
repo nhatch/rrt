@@ -19,7 +19,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic) {
 
   Config target = next_stepwise_target->config;
-  double d = current->distanceFrom(target);
+  double d = distanceFrom(*current, target);
   if (d < 3*MAX_DIFF) {
     if (next_stepwise_target->parent == nullptr) return true;
     if (deterministic || !adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
@@ -28,24 +28,24 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   Config next;
   if (deterministic) {
     double alpha = MAX_DIFF / d;
-    Config line = target - (*current);
-    next = (*current) + line * alpha;
+    Config line = diff(target, (*current));
+    next = *current;
+    next += line * alpha;
   }
   else
   {
     ControlArrayf u, v;
-    StateArrayf x, g;
-    x << current->x, current->y, current->theta;
+    StateArrayf x = *current;
 
     if (!adaptive_carrot) {
-      g << target.x, target.y, target.theta;
-      mppi.setGoal(g);
+      mppi.setGoal(target);
     }
 
     mppi.optimize(x, costmap, graph, adaptive_carrot);
     u = mppi.pop(x);
     u(2) /= pow(THETA_WEIGHT, 0.5);
-    next = (*current) + Config(u(0), u(1), u(2));
+    next = *current;
+    next += u;
   }
 
   *current = next;
@@ -84,10 +84,9 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   int n_steps = 0;
   while (!done) {
     gettimeofday(&tp0, NULL);
-    StateArrayf x;
-    x << current.x, current.y, current.theta;
+    StateArrayf x = current;
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
-    int theta_idx = floor(current.theta / COST_RESOLUTION_TH + 0.5);
+    int theta_idx = floor(current(2) / COST_RESOLUTION_TH + 0.5);
     theta_idx = theta_idx % COST_DIM_TH;
     if (RENDER_CONFIG_SPACE) {
       drawTexture(renders[theta_idx]);
@@ -95,19 +94,16 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
       drawTexture(task_space_render);
     }
     if (!deterministic) {
-      Config goal(mppi.goal_(0), mppi.goal_(1), mppi.goal_(2));
-      drawConfig(goal, sf::Color(0, 0, 255, 255), RENDER_CONFIG_SPACE);
-      Config nearest(mppi.nearest_(0), mppi.nearest_(1), mppi.nearest_(2));
-      drawConfig(nearest, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
+      drawConfig(mppi.goal_, sf::Color(0, 0, 255, 255), RENDER_CONFIG_SPACE);
+      drawConfig(mppi.nearest_, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
     }
     for (int i = 0; i < seq.cols(); i++) {
       if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
-        Config conf(x(0), x(1), x(2));
         if (i == 0) {
-          drawConfig(conf, sf::Color(0, 255, 0, 255), RENDER_CONFIG_SPACE);
+          drawConfig(x, sf::Color(0, 255, 0, 255), RENDER_CONFIG_SPACE);
         } else {
-          drawConfig(conf, sf::Color(128, 200, 128, 64), RENDER_CONFIG_SPACE);
+          drawConfig(x, sf::Color(128, 200, 128, 64), RENDER_CONFIG_SPACE);
         }
       }
     }
@@ -115,10 +111,10 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
 
     Config prev = current;
     done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
-    path_cost += prev.distanceFrom(current);
+    path_cost += distanceFrom(prev, current);
     n_steps += 1;
 
-    Config noise = Config::randConfig() * MOTION_NOISE;
+    Config noise = randConfig() * MOTION_NOISE;
     current = current + noise;
     if (collides(current, task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";

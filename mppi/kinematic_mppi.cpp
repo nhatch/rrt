@@ -187,12 +187,11 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
 }
 
 GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost) {
-  Config c(x(0), x(1), x(2));
   GraphNode *min_node = nullptr;
   double min_dist = 10000.f;
   double min_cost = 0.f;
   for (GraphNode *node : graph) {
-    double d = c.distanceFrom(node->config);
+    double d = distanceFrom(x, node->config);
     if (d < min_dist) {
       min_node = node;
       min_dist = d;
@@ -243,8 +242,8 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     if (node->parent != nullptr) {
       goal_c = node->parent->config;
     }
-    nearest_ << near_c.x, near_c.y, near_c.theta;
-    goal_ << goal_c.x, goal_c.y, goal_c.theta;
+    nearest_ = near_c;
+    goal_ = goal_c;
   } else {
     nearest_ = goal_;
   }
