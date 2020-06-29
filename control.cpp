@@ -84,7 +84,6 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   while (!done) {
     gettimeofday(&tp0, NULL);
     StateArrayf x = current;
-    StateArrayXf seq = mppi.rolloutNominalSeq(x);
     if (RENDER_CONFIG_SPACE) {
       int theta_idx = floor(current(2) / COST_RESOLUTION_TH + 0.5);
       theta_idx = theta_idx % COST_DIM_TH;
@@ -93,10 +92,20 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     } else {
       drawTexture(task_space_render);
     }
+    SampledTrajs asdf = mppi.recent_samples_;
+    int n_trajs = asdf.X_trajs.cols();
+    int traj_len = asdf.X_trajs.rows();
+    for (int i = 0; i < n_trajs; i++) {
+      if (i % 20 == 0) {
+        StateArrayf x = asdf.X_trajs.block(traj_len-STATE_DIM, i, STATE_DIM, 1);
+        drawConfig(x, sf::Color(255, 0, 0, 8), RENDER_CONFIG_SPACE);
+      }
+    }
     if (!deterministic) {
       drawConfig(mppi.goal_, sf::Color(0, 0, 255, 255), RENDER_CONFIG_SPACE);
       drawConfig(mppi.nearest_, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
     }
+    StateArrayXf seq = mppi.rolloutNominalSeq(x);
     for (int i = 0; i < seq.cols(); i++) {
       if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
