@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "done.\n";
 
-  doControl(path, task, costmap, graph, min_graph, false, true);
+  //doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
     if (!FULL_COSTMAP) {

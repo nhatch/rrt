@@ -14,8 +14,6 @@ constexpr double LENGTH = 0.2;
 constexpr size_t N_BALLS = 11;
 constexpr double BALL_RADIUS = LENGTH / (N_BALLS - 1);
 
-// Should be at least LENGTH^2 to guarantee
-// that collisions will be detected. (I think.)
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
 constexpr double THETA_WEIGHT = 0.85;

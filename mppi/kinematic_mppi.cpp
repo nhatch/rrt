@@ -196,12 +196,11 @@ GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost)
     if (d < min_dist) {
       min_node = node;
       min_dist = d;
-      double cost = node->cost + d;
       if (node->parent != nullptr) {
-        double p_dist = distanceFrom(x, node->parent->config);
-        cost = node->parent->cost + p_dist;
+        min_node = node->parent;
+        d = distanceFrom(x, min_node->config);
       }
-      min_cost = cost;
+      min_cost = min_node->cost + d;
     }
   }
   *cost = min_cost;
@@ -243,12 +242,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     double t_cost;
     StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
     GraphNode *node = nearestNode(graph, x, &t_cost);
-    Config near_c = node->config;
     Config goal_c = node->config;
-    if (node->parent != nullptr) {
-      goal_c = node->parent->config;
-    }
-    nearest_ = near_c;
     goal_ = goal_c;
   } else {
     nearest_ = goal_;
