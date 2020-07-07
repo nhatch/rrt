@@ -132,14 +132,14 @@ ArrayXXf KinematicMPPI::sampleControlTrajs() {
   MatrixXf dU_norm_flat = MatrixXf::NullaryExpr(CONTROL_DIM*sample_horizon_, rollouts_, randN_);
   ArrayXXf U_trajs = (control_sqrt_cov_ * dU_norm_flat).array();
   ArrayXf U_flat = reshape(U_, CONTROL_DIM*sample_horizon_);
-  U_trajs.leftCols(low_std_rollouts) /= 5.0;
+  //U_trajs.leftCols(low_std_rollouts) /= 5.0;
   // Use control_sqrt_cov_wild_ to generate the next `wild_rollouts` samples
   // TODO: Why, after MPPI finds a good rollout using the wild rollouts, does it sometimes snap
   // back to a worse local minimum?
   //U_trajs.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts) =
   //    (control_sqrt_cov_wild_ * dU_norm_flat.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts)).array();
   U_trajs.leftCols(rollouts_ - zero_rollouts).colwise() += U_flat;
-  U_trajs.leftCols(1).colwise() = U_flat;
+  //U_trajs.leftCols(1).colwise() = U_flat;
   clamp(U_trajs);
   return U_trajs;
 }
@@ -271,8 +271,12 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     costs_flat += dist2goal_flat;
   }
 
+  ArrayXXf controls = reshape(samples.U_trajs, STATE_DIM, (horizon_)*rollouts);
+  controls.row(2) *= THETA_WEIGHT;
+  ArrayXf control_costs_flat = controls.matrix().colwise().norm().array();
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
-  ArrayXf traj_costs = costs.colwise().sum();
+  ArrayXXf control_costs = reshape(control_costs_flat, horizon_, rollouts);
+  ArrayXf traj_costs = costs.colwise().sum() + control_costs.colwise().sum();
 
   if (NEAREST_NEIGHBOR) {
     for (int i = 0; i < rollouts; i++) {
