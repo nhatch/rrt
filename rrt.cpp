@@ -13,6 +13,7 @@
 
 const bool PLAIN_RRT = false;
 const bool LOAD_COSTMAP = true;
+const std::string costmap_fname = "full_costmap_5000.txt";
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -225,7 +226,7 @@ int main(int argc, char *argv[]) {
 
   if (LOAD_COSTMAP)
   {
-    loadArray(costmap, "costmap.txt");
+    loadArray(costmap, costmap_fname);
   }
   else
   {
@@ -266,7 +267,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    saveArray(costmap, "costmap.txt");
+    //saveArray(costmap, costmap_fname);
   }
   std::cout << "done.\n";
 
