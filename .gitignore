@@ -1,3 +1,4 @@
 *.o
 a.out
 *.swp
+*costmap*.txt

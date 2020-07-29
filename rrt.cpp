@@ -12,6 +12,7 @@
 #include "arrayio.h"
 
 const bool PLAIN_RRT = false;
+const bool LOAD_COSTMAP = true;
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -221,46 +222,53 @@ int main(int argc, char *argv[]) {
   ArrayXXb costmap;
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   costmap.fill(0);
-  int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
-  for (unsigned int i = 0; i < COST_DIM_X; i++) {
-    for (unsigned int j = 0; j < COST_DIM_Y; j++) {
-      for (unsigned int k = 0; k < COST_DIM_TH; k++) {
-        if (counter % 10000 == 0) {
-          std::cout << counter << " of " << total << std::endl;
-        }
-        counter++;
-        Config c;
-        c <<     (i+0.5)*COST_RESOLUTION_XY + MIN_X,
-                 (j+0.5)*COST_RESOLUTION_XY + MIN_Y,
-                 k*COST_RESOLUTION_TH;
-        if (collides(c, task, BALL_RADIUS)) {
-          costmap(i, j*COST_DIM_TH + k) = 255;
-        } else if (FULL_COSTMAP) {
-          // Find nearest point on existing graph
-          Config splitConfig;
-          bool needsSplitNode;
-          double min_dist = 10000.f;
-          double base_cost, cost;
-          GraphNode *existingNode;
-          // use min_graph instead of graph for computational reasons
-          for (GraphNode *node : min_graph) {
-            if (!node->parent)
-              continue;
-            double d = minDistance(node, c, &needsSplitNode, &splitConfig, &base_cost);
-            if (d < min_dist) {
-              min_dist = d;
-              cost = base_cost + d;
-            }
+
+  if (LOAD_COSTMAP)
+  {
+    loadArray(costmap, "costmap.txt");
+  }
+  else
+  {
+    int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
+    for (unsigned int i = 0; i < COST_DIM_X; i++) {
+      for (unsigned int j = 0; j < COST_DIM_Y; j++) {
+        for (unsigned int k = 0; k < COST_DIM_TH; k++) {
+          if (counter % 10000 == 0) {
+            std::cout << counter << " of " << total << std::endl;
           }
-          double MAX_COST = 10.0; // TODO 10 might be too small
-          costmap(i, j*COST_DIM_TH + k) = (uint8_t) (cost / MAX_COST * 255.0);
+          counter++;
+          Config c;
+          c <<     (i+0.5)*COST_RESOLUTION_XY + MIN_X,
+                   (j+0.5)*COST_RESOLUTION_XY + MIN_Y,
+                   k*COST_RESOLUTION_TH;
+          if (collides(c, task, BALL_RADIUS)) {
+            costmap(i, j*COST_DIM_TH + k) = 255;
+          } else if (FULL_COSTMAP) {
+            // Find nearest point on existing graph
+            Config splitConfig;
+            bool needsSplitNode;
+            double min_dist = 10000.f;
+            double base_cost, cost;
+            GraphNode *existingNode;
+            // use min_graph instead of graph for computational reasons
+            for (GraphNode *node : min_graph) {
+              if (!node->parent)
+                continue;
+              double d = minDistance(node, c, &needsSplitNode, &splitConfig, &base_cost);
+              if (d < min_dist) {
+                min_dist = d;
+                cost = base_cost + d;
+              }
+            }
+            double MAX_COST = 10.0; // TODO 10 might be too small
+            costmap(i, j*COST_DIM_TH + k) = (uint8_t) (cost / MAX_COST * 255.0);
+          }
         }
       }
     }
+    saveArray(costmap, "costmap.txt");
   }
   std::cout << "done.\n";
-  saveArray(costmap, "costmap.txt");
-  loadArray(costmap, "costmap.txt");
 
   doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
