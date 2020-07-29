@@ -9,6 +9,7 @@
 #include "collision.h"
 #include "graphics.h"
 #include "control.h"
+#include "arrayio.h"
 
 const bool PLAIN_RRT = false;
 
@@ -258,6 +259,8 @@ int main(int argc, char *argv[]) {
     }
   }
   std::cout << "done.\n";
+  saveArray(costmap, "costmap.txt");
+  loadArray(costmap, "costmap.txt");
 
   doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;

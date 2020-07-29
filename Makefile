@@ -1,7 +1,7 @@
 CC=g++
 ROS_INCLUDE=-I /opt/ros/melodic/include
 CFLAGS=-pedantic-errors $(ROS_INCLUDE) #-Wall -Wextra #-Wsign-conversion #-Weffc++
-DEPS=config.o rrt.o collision.o graphics.o control.o mppi/kinematic_mppi.o mppi/stick_mppi.o
+DEPS=config.o rrt.o collision.o graphics.o control.o mppi/kinematic_mppi.o mppi/stick_mppi.o arrayio.o
 ROS_LINK=-L /opt/ros/melodic/lib -lboost_system
 SFML_LINK=-lsfml-graphics -lsfml-window -lsfml-system
 
