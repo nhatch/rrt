@@ -11,9 +11,13 @@
 #include "control.h"
 #include "arrayio.h"
 
-const bool PLAIN_RRT = false;
-const bool LOAD_COSTMAP = true;
-const std::string costmap_fname = "full_costmap_5000.txt";
+const bool MANUAL_GRAPH = true;
+const bool PLAIN_RRT = MANUAL_GRAPH || false;
+const bool LOAD_COSTMAP = false;
+const std::string costmap_fname = "full_costmap_widemanual_max10.txt";
+const double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
+double rrt_star_rad = ETA;
+const int MIN_SAMPLES = 1;
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -94,6 +98,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
       //bestNeedsSplitNode = needsSplitNode;
     }
   }
+  if (MANUAL_GRAPH && config(0) < -0.7) existingNode = graph[4];
 
   // TODO implement calculation of edge costs for split nodes?
   /*
@@ -106,8 +111,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   */
 
   // Steer toward sampled node
-  double eta = 0.5;
-  double steer_frac = eta / min_dist;
+  double steer_frac = ETA / min_dist;
   if (steer_frac > 1.0) steer_frac = 1.0;
   Config steered = (existingNode->config) + diff(config, existingNode->config) * steer_frac;
 
@@ -120,14 +124,16 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
     maxConfig(existingNode->config, steered, task, BALL_RADIUS, &noCollision);
     if (noCollision) {
       children.push_back(existingNode);
-      costs.push_back(0.0);
+      // RRT search doesn't use this cost, but MPC control does later
+      double distance = distanceFrom(steered, existingNode->config);
+      costs.push_back(distance);
     }
   } else {
     // TODO using k-nearest RRT* might actually be less expensive
     double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
     double N = graph.size() + 1;
-    double rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
-    if (rrt_star_rad > eta) rrt_star_rad = eta;
+    rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
+    if (rrt_star_rad > ETA) rrt_star_rad = ETA;
     //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
     for (GraphNode *node: graph) {
       double distance = distanceFrom(steered, node->config);
@@ -170,12 +176,22 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
   GraphNode *current = graph[0];
   int iter = 0;
-  while (distanceFrom(start, current->config) > tol) {
+  std::vector<Config> manual_samples({});
+  manual_samples.push_back({ 0.3, 0.0, 0.0});
+  manual_samples.push_back({ 0.3, 0.0, M_PI});
+  manual_samples.push_back({-0.3, 0.0, 0.0});
+  manual_samples.push_back({-0.3, 0.0, M_PI});
+  manual_samples.push_back(start);
+  while (iter < MIN_SAMPLES || distanceFrom(start, current->config) > tol) {
     Config c;
-    if (++iter % 100 == 0) {
-      c = start;
+    if (MANUAL_GRAPH) {
+      c = manual_samples[iter++];
     } else {
-      c = randConfig();
+      if (++iter % 100 == 0) {
+        c = start;
+      } else {
+        c = randConfig();
+      }
     }
     current = insert(graph, c, task);
     drawGraph(graph, task);
@@ -231,6 +247,7 @@ int main(int argc, char *argv[]) {
   else
   {
     int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
+    double MAX_COST = 10.0; // Optimal path cost is something like 4.3
     for (unsigned int i = 0; i < COST_DIM_X; i++) {
       for (unsigned int j = 0; j < COST_DIM_Y; j++) {
         for (unsigned int k = 0; k < COST_DIM_TH; k++) {
@@ -247,27 +264,25 @@ int main(int argc, char *argv[]) {
           } else if (FULL_COSTMAP) {
             // Find nearest point on existing graph
             Config splitConfig;
-            bool needsSplitNode;
-            double min_dist = 10000.f;
-            double base_cost, cost;
-            GraphNode *existingNode;
-            // use min_graph instead of graph for computational reasons
-            for (GraphNode *node : min_graph) {
-              if (!node->parent)
-                continue;
-              double d = minDistance(node, c, &needsSplitNode, &splitConfig, &base_cost);
-              if (d < min_dist) {
-                min_dist = d;
-                cost = base_cost + d;
+            double min_cost = MAX_COST;
+            for (GraphNode *node : graph) {
+              double d = minDistance(node, c);
+              double cost = node->cost + d;
+              if (d <= ETA && cost < min_cost) {
+                bool collisionFree = true;
+                // If d is small enough, then it's guaranteed that the goal is not
+                // on the other side of a wall. Thus we don't need to check for collisions.
+                if (d > 0.2)
+                  maxConfig(node->config, c, task, BALL_RADIUS, &collisionFree);
+                if (collisionFree) min_cost = cost;
               }
             }
-            double MAX_COST = 10.0; // TODO 10 might be too small
-            costmap(i, j*COST_DIM_TH + k) = (uint8_t) (cost / MAX_COST * 255.0);
+            costmap(i, j*COST_DIM_TH + k) = (uint8_t) (min_cost / MAX_COST * 255.0);
           }
         }
       }
     }
-    //saveArray(costmap, costmap_fname);
+    saveArray(costmap, costmap_fname);
   }
   std::cout << "done.\n";
 

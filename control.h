@@ -13,7 +13,7 @@ const double MAX_DIFF = SPEED / CONTROL_HZ;
 const bool FULL_COSTMAP = true;
 const bool NEAREST_NEIGHBOR = false;
 const double MOTION_NOISE = 0.005;
-const bool RENDER_CONFIG_SPACE = false;
+const bool RENDER_CONFIG_SPACE = true;
 
 using maps_t = std::vector<sf::Texture>;
 
