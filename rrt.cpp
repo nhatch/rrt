@@ -11,13 +11,12 @@
 #include "control.h"
 #include "arrayio.h"
 
-const bool MANUAL_GRAPH = true;
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
-const bool LOAD_COSTMAP = false;
-const std::string costmap_fname = "full_costmap_widemanual_max10.txt";
-const double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
+const bool LOAD_COSTMAP = true;
+const std::string costmap_fname = "costmap_obstacles_only.txt";
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
+double MAX_COST = 10.0; // Optimal path cost is something like 4.3
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -207,6 +206,28 @@ void destroyGraph(graph_t *graph) {
   graph->clear();
 }
 
+GraphNode *nearestNode(const graph_t &graph, const Config &x, const Task &task, double *cost) {
+  GraphNode *min_node = nullptr;
+  double min_cost = MAX_COST;
+  for (GraphNode *node : graph) {
+    double d = distanceFrom(x, node->config);
+    double cost = node->cost + d;
+    if (d <= ETA && cost < min_cost) {
+      bool collisionFree = true;
+      // If d is small enough, then it's guaranteed that the goal is not
+      // on the other side of a wall. Thus we don't need to check for collisions.
+      if (d > 0.2)
+        maxConfig(node->config, x, task, BALL_RADIUS, &collisionFree);
+      if (collisionFree) {
+        min_cost = cost;
+        min_node = node;
+      }
+    }
+  }
+  *cost = min_cost;
+  return min_node;
+}
+
 int main(int argc, char *argv[]) {
   //std::cout.precision(2);
   //std::cout << std::fixed;
@@ -247,7 +268,6 @@ int main(int argc, char *argv[]) {
   else
   {
     int counter(0), total(COST_DIM_X * COST_DIM_Y * COST_DIM_TH);
-    double MAX_COST = 10.0; // Optimal path cost is something like 4.3
     for (unsigned int i = 0; i < COST_DIM_X; i++) {
       for (unsigned int j = 0; j < COST_DIM_Y; j++) {
         for (unsigned int k = 0; k < COST_DIM_TH; k++) {
@@ -262,21 +282,8 @@ int main(int argc, char *argv[]) {
           if (collides(c, task, BALL_RADIUS)) {
             costmap(i, j*COST_DIM_TH + k) = 255;
           } else if (FULL_COSTMAP) {
-            // Find nearest point on existing graph
-            Config splitConfig;
-            double min_cost = MAX_COST;
-            for (GraphNode *node : graph) {
-              double d = minDistance(node, c);
-              double cost = node->cost + d;
-              if (d <= ETA && cost < min_cost) {
-                bool collisionFree = true;
-                // If d is small enough, then it's guaranteed that the goal is not
-                // on the other side of a wall. Thus we don't need to check for collisions.
-                if (d > 0.2)
-                  maxConfig(node->config, c, task, BALL_RADIUS, &collisionFree);
-                if (collisionFree) min_cost = cost;
-              }
-            }
+            double min_cost;
+            nearestNode(graph, c, task, &min_cost);
             costmap(i, j*COST_DIM_TH + k) = (uint8_t) (min_cost / MAX_COST * 255.0);
           }
         }

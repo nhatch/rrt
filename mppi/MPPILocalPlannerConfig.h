@@ -4,7 +4,7 @@
 
 struct MPPILocalPlannerConfig {
   int mppi_rollouts = 1000;
-  int time_horizon = 5;
+  int time_horizon = 3;
   int lag = 0;
   int mppi_opt_iters = 1;
   float mppi_orientation_width = 5.;

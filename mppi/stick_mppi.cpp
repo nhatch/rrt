@@ -1,8 +1,8 @@
 #include "stick_mppi.h"
 #include "../control.h"
 
-StickMPPI::StickMPPI(MPPILocalPlannerConfig &config)
-  : KinematicMPPI(config) {
+StickMPPI::StickMPPI(MPPILocalPlannerConfig &config, const Task &task)
+  : KinematicMPPI(config, task) {
 }
 
 ArrayXXf StickMPPI::toRigidBodyVels(ArrayXXf U) {

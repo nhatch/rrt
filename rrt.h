@@ -4,6 +4,9 @@
 #include <vector>
 #include "config.h"
 
+const bool MANUAL_GRAPH = false;
+const double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
+
 struct GraphNode {
   const Config config;
   // Directed graph (though I anticipate for this example I'll
@@ -24,5 +27,7 @@ struct Task {
   const Config &end;
   const std::vector<obstacle_t> &obstacles;
 };
+
+GraphNode *nearestNode(const graph_t &graph, const Config &x, const Task &task, double *cost);
 
 #endif

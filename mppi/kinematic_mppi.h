@@ -37,7 +37,7 @@ class KinematicMPPI {
     static float VEL_MAX; ///< maximum velocity of the robot
     static float TRACK; ///< distance between left and right sides of the robot
 
-    KinematicMPPI(MPPILocalPlannerConfig &config);
+    KinematicMPPI(MPPILocalPlannerConfig &config, const Task &task);
     virtual ~KinematicMPPI();
 
     /**
@@ -113,6 +113,7 @@ class KinematicMPPI {
     float speed_cost_threshold_;
     float speed_cost_weight_;
     float theta_weight_;
+    const Task &task_;
 
     void shiftControlHistory();
     MatrixXf buildTridiag(ControlArrayf &stds, float superdiag);

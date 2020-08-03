@@ -18,7 +18,7 @@ ArrayXXf reshape(ArrayXXf array, size_t rows, size_t cols) {
   return Eigen::Map<ArrayXXf>(array.data(), rows, cols);
 }
 
-KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config) {
+KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config, const Task &task) : task_(task) {
   horizon_ = config.time_horizon;
   lag_horizon_ = config.lag;
   sample_horizon_ = horizon_ - lag_horizon_;
@@ -187,26 +187,6 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   return X_next;
 }
 
-GraphNode *nearestNode(const graph_t &graph, const StateArrayf &x, double *cost) {
-  GraphNode *min_node = nullptr;
-  double min_dist = 10000.f;
-  double min_cost = 0.f;
-  for (GraphNode *node : graph) {
-    double d = distanceFrom(x, node->config);
-    if (d < min_dist) {
-      min_node = node;
-      min_dist = d;
-      if (node->parent != nullptr) {
-        min_node = node->parent;
-        d = distanceFrom(x, min_node->config);
-      }
-      min_cost = min_node->cost + d;
-    }
-  }
-  *cost = min_cost;
-  return min_node;
-}
-
 ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph, bool adaptive_carrot) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
@@ -241,9 +221,10 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   if (adaptive_carrot) {
     double t_cost;
     StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
-    GraphNode *node = nearestNode(graph, x, &t_cost);
-    Config goal_c = node->config;
-    goal_ = goal_c;
+    GraphNode *node = nearestNode(graph, x, task_, &t_cost);
+    if (node != nullptr) {
+      goal_ = node->config;
+    }
   } else {
     nearest_ = goal_;
   }
@@ -283,7 +264,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
       int terminal_state_idx = (i+1)*(horizon_+1) - 1;
       StateArrayf x = states.col(terminal_state_idx);
       double t_cost;
-      GraphNode *node = nearestNode(graph, x, &t_cost);
+      nearestNode(graph, x, task_, &t_cost);
       traj_costs(i) += t_cost;
     }
   }

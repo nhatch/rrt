@@ -6,7 +6,7 @@
 
 class StickMPPI : public KinematicMPPI {
   public:
-    StickMPPI(MPPILocalPlannerConfig &config);
+    StickMPPI(MPPILocalPlannerConfig &config, const Task &task);
 
     ArrayXXf toRigidBodyVels(ArrayXXf U);
     void clamp(ArrayXXf& U);

@@ -62,7 +62,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   MPPILocalPlannerConfig mppi_config;
   mppi_config.theta_weight = THETA_WEIGHT;
   mppi_config.mppi_seed = rand();
-  StickMPPI mppi(mppi_config);
+  StickMPPI mppi(mppi_config, task);
   Array3f goal;
   goal << 0., 0., 0.;
   mppi.reset();
