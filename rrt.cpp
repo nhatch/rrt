@@ -296,11 +296,7 @@ int main(int argc, char *argv[]) {
   doControl(path, task, costmap, graph, min_graph, false, true);
   int N_TRIALS = 2;
   for (int i = 0; i < N_TRIALS; i++) {
-    if (!FULL_COSTMAP) {
-      doControl(path, task, costmap, graph, min_graph, true, false);
-    } else {
-      doControl(path, task, costmap, graph, min_graph, false, false);
-    }
+    doControl(path, task, costmap, graph, min_graph, false, false);
   }
 
   destroyGraph(&graph);

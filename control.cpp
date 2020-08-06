@@ -50,7 +50,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
 void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
   Config current = path->config;
-  if (!deterministic && (adaptive_carrot || FULL_COSTMAP)) {
+  if (!deterministic) {
     next_stepwise_target = graph[0];
   } else {
     next_stepwise_target = path->parent;
