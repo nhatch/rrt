@@ -212,7 +212,7 @@ GraphNode *nearestNode(const graph_t &graph, const Config &x, const Task &task, 
   for (GraphNode *node : graph) {
     double d = distanceFrom(x, node->config);
     double cost = node->cost + d;
-    if (d <= ETA && cost < min_cost) {
+    if (d <= std::max(ETA,0.2) && cost < min_cost) {
       bool collisionFree = true;
       // If d is small enough, then it's guaranteed that the goal is not
       // on the other side of a wall. Thus we don't need to check for collisions.
