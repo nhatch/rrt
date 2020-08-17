@@ -21,7 +21,7 @@ struct MPPILocalPlannerConfig {
   float speed_cost_threshold = 1.f;
   float speed_cost_weight = 0.f;
   float theta_weight = 1.f;
-  float mppi_temperature = 0.005f;
+  float mppi_temperature = 0.5f;
 };
 
 #endif

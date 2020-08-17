@@ -16,7 +16,7 @@ void StickMPPI::clamp(ArrayXXf& U) {
                     U_flat.row(1)*U_flat.row(1) +
                     THETA_WEIGHT*THETA_WEIGHT*U_flat.row(2)*U_flat.row(2);
   ArrayXf frac = pow(norm_sq, 0.5) / MAX_DIFF;
-  frac = frac.max(1.0);
+  //frac = frac.max(1.0);
   U_flat.row(0) /= frac;
   U_flat.row(1) /= frac;
   U_flat.row(2) /= frac;
