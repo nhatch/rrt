@@ -7,5 +7,6 @@
 
 void saveArray(const ArrayXXb &arr, const std::string &fname);
 void loadArray(ArrayXXb &arr, const std::string &fname);
+bool arrayExists(const std::string &fname);
 
 #endif

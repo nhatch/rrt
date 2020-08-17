@@ -27,3 +27,10 @@ void loadArray(ArrayXXb &arr, const std::string &fname) {
   }
   file.close();
 }
+
+bool arrayExists(const std::string &fname) {
+  std::ifstream file(fname);
+  bool res = file.is_open();
+  file.close();
+  return res;
+}

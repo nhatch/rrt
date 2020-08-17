@@ -12,8 +12,6 @@
 #include "arrayio.h"
 
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
-const bool LOAD_COSTMAP = true;
-const std::string costmap_fname = "costmap_obstacles_only.txt";
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
 double MAX_COST = 10.0; // Optimal path cost is something like 4.3
@@ -261,7 +259,9 @@ int main(int argc, char *argv[]) {
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   costmap.fill(0);
 
-  if (LOAD_COSTMAP)
+  std::string costmap_fname = "costmap_" + std::to_string(seed) + ".txt";
+  if (!FULL_COSTMAP) costmap_fname = "costmap_obstacles_only.txt";
+  if (arrayExists(costmap_fname))
   {
     loadArray(costmap, costmap_fname);
   }
