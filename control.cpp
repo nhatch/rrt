@@ -119,7 +119,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     doneDrawingStuff();
 
     Config prev = current;
-    done = getNextConfig(&current, path, task, min_graph, mppi, costmap, adaptive_carrot, deterministic);
+    done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
     path_cost += distanceFrom(prev, current);
     n_steps += 1;
 

@@ -259,8 +259,8 @@ int main(int argc, char *argv[]) {
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   costmap.fill(0);
 
-  std::string costmap_fname = "costmap_" + std::to_string(seed) + ".txt";
-  if (!FULL_COSTMAP) costmap_fname = "costmap_obstacles_only.txt";
+  std::string costmap_fname = "costmaps/costmap_" + std::to_string(seed) + ".txt";
+  if (!FULL_COSTMAP) costmap_fname = "costmaps/costmap_obstacles_only.txt";
   if (arrayExists(costmap_fname))
   {
     loadArray(costmap, costmap_fname);
@@ -294,10 +294,8 @@ int main(int argc, char *argv[]) {
   std::cout << "done.\n";
 
   doControl(path, task, costmap, graph, min_graph, false, true);
-  int N_TRIALS = 2;
-  for (int i = 0; i < N_TRIALS; i++) {
-    doControl(path, task, costmap, graph, min_graph, false, false);
-  }
+  doControl(path, task, costmap, graph, min_graph, false, false);
+  doControl(path, task, costmap, min_graph, min_graph, false, false);
 
   destroyGraph(&graph);
   return 0;
