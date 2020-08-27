@@ -8,13 +8,13 @@
 #include "rrt.h"
 #include "collision.h"
 #include "graphics.h"
+#include "graph.h"
 #include "control.h"
 #include "arrayio.h"
 
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
-double MAX_COST = 10.0; // Optimal path cost is something like 4.3
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -60,14 +60,16 @@ void value_iterate(graph_t &graph) {
   bool changed = true;
   while (changed) {
     changed = false;
-    for (GraphNode *node : graph) {
-      for (size_t i = 0; i < node->children.size(); i++) {
-        GraphNode *child = node->children[i];
-        double path_cost = node->costs[i] + child->cost;
-        if (path_cost < node->cost) {
-          changed = true;
-          node->parent = child;
-          node->cost = path_cost;
+    for (nodelist_t& list : graph.buckets_) {
+      for (GraphNode *node : list) {
+        for (size_t i = 0; i < node->children.size(); i++) {
+          GraphNode *child = node->children[i];
+          double path_cost = node->costs[i] + child->cost;
+          if (path_cost < node->cost) {
+            changed = true;
+            node->parent = child;
+            node->cost = path_cost;
+          }
         }
       }
     }
@@ -75,7 +77,7 @@ void value_iterate(graph_t &graph) {
 }
 
 GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
-  GraphNode *existingNode = graph[0]; // root node
+  GraphNode *existingNode = graph.nodeForConfig(task.end);
   double min_dist = distanceFrom(config, existingNode->config);
   //bool needsSplitNode = false;
   //bool bestNeedsSplitNode = false;
@@ -83,19 +85,24 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
   //Config bestSplitConfig {0., 0., 0.};
 
   // Find nearest node in existing graph
-  for (GraphNode *node : graph) {
-    if (!node->parent)
-      continue;
-    //double d = minDistance(node, config, &needsSplitNode, &splitConfig);
-    double d = minDistance(node, config);
-    if (d < min_dist) {
-      min_dist = d;
-      existingNode = node;
-      //bestSplitConfig = splitConfig;
-      //bestNeedsSplitNode = needsSplitNode;
+  for (nodelist_t& list : graph.buckets_) {
+    for (GraphNode *node : list) {
+      if (!node->parent)
+        continue;
+      //double d = minDistance(node, config, &needsSplitNode, &splitConfig);
+      double d = minDistance(node, config);
+      if (d < min_dist) {
+        min_dist = d;
+        existingNode = node;
+        //bestSplitConfig = splitConfig;
+        //bestNeedsSplitNode = needsSplitNode;
+      }
     }
   }
-  if (MANUAL_GRAPH && config(0) < -0.7) existingNode = graph[4];
+  if (MANUAL_GRAPH && config(0) < -0.7) {
+    Config desiredParent {-0.3, 0.0, M_PI};
+    existingNode = graph.nodeForConfig(desiredParent);
+  }
 
   // TODO implement calculation of edge costs for split nodes?
   /*
@@ -132,15 +139,17 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
     rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
     if (rrt_star_rad > ETA) rrt_star_rad = ETA;
     //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
-    for (GraphNode *node: graph) {
-      double distance = distanceFrom(steered, node->config);
-      if (distance < rrt_star_rad) {
-        bool noCollision;
-        maxConfig(node->config, steered, task, BALL_RADIUS, &noCollision);
-        if (noCollision) {
-          children.push_back(node);
-          // TODO can the cost be different from the distance?
-          costs.push_back(distance);
+    for (nodelist_t& list : graph.buckets_) {
+      for (GraphNode *node : list) {
+        double distance = distanceFrom(steered, node->config);
+        if (distance < rrt_star_rad) {
+          bool noCollision;
+          maxConfig(node->config, steered, task, BALL_RADIUS, &noCollision);
+          if (noCollision) {
+            children.push_back(node);
+            // TODO can the cost be different from the distance?
+            costs.push_back(distance);
+          }
         }
       }
     }
@@ -148,7 +157,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 
   if (children.size() > 0) {
     GraphNode *newNode = new GraphNode {steered, children, costs, nullptr, 0.};
-    graph.push_back(newNode);
+    graph.insert(newNode);
     for (size_t i = 0; i < children.size(); i++) {
       double path_cost = costs[i] + children[i]->cost;
       if (newNode->parent == nullptr || path_cost < newNode->cost) {
@@ -171,7 +180,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 }
 
 GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
-  GraphNode *current = graph[0];
+  GraphNode *current = graph.nodeForConfig(task.end);
   int iter = 0;
   std::vector<Config> manual_samples({});
   manual_samples.push_back({ 0.3, 0.0, 0.0});
@@ -198,32 +207,12 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
 }
 
 void destroyGraph(graph_t *graph) {
-  for (GraphNode *node : *graph) {
-    delete node;
-  }
-  graph->clear();
-}
-
-GraphNode *nearestNode(const graph_t &graph, const Config &x, const Task &task, double *cost) {
-  GraphNode *min_node = nullptr;
-  double min_cost = MAX_COST;
-  for (GraphNode *node : graph) {
-    double d = distanceFrom(x, node->config);
-    double cost = node->cost + d;
-    if (d <= std::max(ETA,0.2) && cost < min_cost) {
-      bool collisionFree = true;
-      // If d is small enough, then it's guaranteed that the goal is not
-      // on the other side of a wall. Thus we don't need to check for collisions.
-      if (d > 0.2)
-        maxConfig(node->config, x, task, BALL_RADIUS, &collisionFree);
-      if (collisionFree) {
-        min_cost = cost;
-        min_node = node;
-      }
+  for (nodelist_t& list : graph->buckets_) {
+    for (GraphNode *node : list) {
+      delete node;
     }
+    list.clear();
   }
-  *cost = min_cost;
-  return min_node;
 }
 
 int main(int argc, char *argv[]) {
@@ -243,14 +232,15 @@ int main(int argc, char *argv[]) {
   const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
   Task task {start, end, {obs1, obs2}};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
-  graph_t graph {g_root};
+  graph_t graph;
+  graph.insert(g_root);
   GraphNode *path = search(start, graph, task);
   //animatePath(path, task, graph);
 
-  graph_t min_graph {};
+  graph_t min_graph;
   GraphNode *curr = path;
   while (curr != nullptr) {
-    min_graph.insert(min_graph.begin(), 1, curr);
+    min_graph.insert(curr);
     curr = curr->parent;
   }
 
@@ -283,7 +273,7 @@ int main(int argc, char *argv[]) {
             costmap(i, j*COST_DIM_TH + k) = 255;
           } else if (FULL_COSTMAP) {
             double min_cost;
-            nearestNode(graph, c, task, &min_cost);
+            graph.nearestNode(c, task, &min_cost);
             costmap(i, j*COST_DIM_TH + k) = (uint8_t) (min_cost / MAX_COST * 255.0);
           }
         }

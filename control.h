@@ -17,6 +17,6 @@ const bool RENDER_CONFIG_SPACE = true;
 
 using maps_t = std::vector<sf::Texture>;
 
-void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic);
+void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic);
 
 #endif

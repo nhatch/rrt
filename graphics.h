@@ -2,7 +2,7 @@
 #define RRT_GRAPHICS_H
 
 #include "config.h"
-#include "rrt.h"
+#include "graph.h"
 #include "collision.h"
 #include <SFML/Graphics.hpp>
 #include <Eigen/Core>

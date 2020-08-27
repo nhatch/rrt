@@ -2,7 +2,7 @@
 #define COLLISION_H
 
 #include "config.h"
-#include "rrt.h"
+#include "graph.h"
 
 constexpr int COST_DIM_X = 64;
 constexpr int COST_DIM_Y = 64;

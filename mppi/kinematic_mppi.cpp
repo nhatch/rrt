@@ -221,7 +221,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   if (adaptive_carrot) {
     double t_cost;
     StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
-    GraphNode *node = nearestNode(graph, x, task_, &t_cost);
+    const GraphNode *node = graph.nearestNode(x, task_, &t_cost);
     if (node != nullptr) {
       goal_ = node->config;
     }
@@ -267,7 +267,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
       int terminal_state_idx = (i+1)*(horizon_+1) - 1;
       StateArrayf x = states.col(terminal_state_idx);
       double t_cost;
-      nearestNode(graph, x, task_, &t_cost);
+      graph.nearestNode(x, task_, &t_cost);
       traj_costs(i) += t_cost/MAX_DIFF;
     }
   }

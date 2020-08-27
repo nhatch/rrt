@@ -48,10 +48,10 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   return false;
 }
 
-void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, const graph_t &graph, const graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
+void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
   Config current = path->config;
   if (!deterministic) {
-    next_stepwise_target = graph[0];
+    next_stepwise_target = graph.nodeForConfig(task.end);
   } else {
     next_stepwise_target = path->parent;
   }

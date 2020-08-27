@@ -88,10 +88,12 @@ void drawTask(const Task &task) {
 
 // We'll only draw the "best" paths in the graph, RRT* basically
 void drawGraph(const graph_t &graph) {
-  for (const GraphNode *node : graph) {
-    if (!node->parent)
-      continue;
-    drawLine(node->parent->config, node->config);
+  for (const nodelist_t& list : graph.buckets_) {
+    for (GraphNode *node : list) {
+      if (!node->parent)
+        continue;
+      drawLine(node->parent->config, node->config);
+    }
   }
 }
 
