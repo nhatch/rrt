@@ -248,12 +248,12 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   ArrayXXf posn_errs = states.colwise() - goal_;
   posn_errs.row(2) *= theta_weight_;
   ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
-  if (!NEAREST_NEIGHBOR && !FULL_COSTMAP) {
-    costs_flat += dist2goal_flat;
-  } else if (NEAREST_NEIGHBOR) {
+  if (NEAREST_NEIGHBOR) {
     ArrayXf foo = dist2goal_flat - MAX_DIFF;
     ArrayXf binary_too_far_costs = 0.5 * foo / (foo.abs() + 0.00001) + 0.5;
     costs_flat += binary_too_far_costs;
+  } else if (!FULL_COSTMAP) {
+    costs_flat += dist2goal_flat;
   }
 
   ArrayXXf controls = reshape(samples.U_trajs, STATE_DIM, (horizon_)*rollouts);
