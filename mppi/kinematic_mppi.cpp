@@ -141,6 +141,7 @@ ArrayXXf KinematicMPPI::sampleControlTrajs() {
   U_trajs.leftCols(rollouts_ - zero_rollouts).colwise() += U_flat;
   //U_trajs.leftCols(1).colwise() = U_flat;
   clamp(U_trajs);
+  U_trajs.leftCols(1) *= 0; // "panic button"
   return U_trajs;
 }
 
