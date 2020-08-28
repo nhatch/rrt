@@ -46,22 +46,36 @@ GraphNode* graph_t::nodeForConfig(const Config &c) {
   return list[0];
 }
 
-const GraphNode* graph_t::nearestNode(const Config &x, const Task &task, double *cost) const {
+const GraphNode* graph_t::nearestNode(const Config &config, const Task &task, double *cost) const {
   GraphNode *min_node = nullptr;
   double min_cost = MAX_COST;
-  for (const nodelist_t &list : buckets_) {
-    for (GraphNode *node : list) {
-      double d = distanceFrom(x, node->config);
-      double cost = node->cost + d;
-      if (d <= std::max(ETA,0.2) && cost < min_cost) {
-        bool collisionFree = true;
-        // If d is small enough, then it's guaranteed that the goal is not
-        // on the other side of a wall. Thus we don't need to check for collisions.
-        if (d > 0.2)
-          maxConfig(node->config, x, task, BALL_RADIUS, &collisionFree);
-        if (collisionFree) {
-          min_cost = cost;
-          min_node = node;
+  int b_x, b_y, b_th;
+  int d_x, d_y, d_th;
+  getBuckets(config, &b_x, &b_y, &b_th, &d_x, &d_y, &d_th);
+  for (int ix = 0; ix <= abs(d_x); ix++) {
+    int x = b_x + ix*d_x;
+    if (x < 0 || x >= G_X_LEN) continue;
+    for (int iy = 0; iy <= abs(d_y); iy++) {
+      int y = b_y + iy*d_y;
+      if (y < 0 || y >= G_Y_LEN) continue;
+      for (int ith = 0; ith <= abs(d_th); ith++) {
+        int th = b_th + ith*d_th;
+        if (th < 0 || th >= G_TH_LEN) continue;
+        const nodelist_t &list = buckets_[bucketsToIndex(x, y, th)];
+        for (GraphNode *node : list) {
+          double d = distanceFrom(config, node->config);
+          double cost = node->cost + d;
+          if (d <= std::max(ETA,0.2) && cost < min_cost) {
+            bool collisionFree = true;
+            // If d is small enough, then it's guaranteed that the goal is not
+            // on the other side of a wall. Thus we don't need to check for collisions.
+            if (d > 0.2)
+              maxConfig(node->config, config, task, BALL_RADIUS, &collisionFree);
+            if (collisionFree) {
+              min_cost = cost;
+              min_node = node;
+            }
+          }
         }
       }
     }
@@ -69,3 +83,4 @@ const GraphNode* graph_t::nearestNode(const Config &x, const Task &task, double 
   *cost = min_cost;
   return min_node;
 }
+
