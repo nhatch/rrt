@@ -218,16 +218,13 @@ void destroyGraph(graph_t *graph) {
   }
 }
 
-int main(int argc, char *argv[]) {
-  //std::cout.precision(2);
-  //std::cout << std::fixed;
-  unsigned int seed = std::time(nullptr) % 100000;
-  if (argc > 1) {
-    std::istringstream ss {argv[1]};
-    ss >> seed;
-  }
+void set_seed(int seed) {
   std::cout << "Seed: " << seed << '\n';
   std::srand(seed);
+}
+
+void run_seed(int seed) {
+  set_seed(seed);
 
   // Give the vertices in clockwise order
   const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
@@ -286,10 +283,38 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "done.\n";
 
-  doControl(path, task, costmap, graph, min_graph, false, true);
-  doControl(path, task, costmap, graph, min_graph, false, false);
-  doControl(path, task, costmap, min_graph, min_graph, false, false);
+  int N_REPEATS = 5;
+  std::cout << "NAIVE\n";
+  for (int i = 0; i < N_REPEATS; i++) {
+    set_seed(++seed);
+    doControl(path, task, costmap, graph, min_graph, false, true);
+  }
+  std::cout << "MPPI (full)\n";
+  for (int i = 0; i < N_REPEATS; i++) {
+    set_seed(++seed);
+    doControl(path, task, costmap, graph, min_graph, false, false);
+  }
+  std::cout << "MPPI (min)\n";
+  for (int i = 0; i < N_REPEATS; i++) {
+    set_seed(++seed);
+    doControl(path, task, costmap, min_graph, min_graph, false, false);
+  }
 
   destroyGraph(&graph);
-  return 0;
+}
+
+int main(int argc, char *argv[]) {
+  //std::cout.precision(2);
+  //std::cout << std::fixed;
+  unsigned int seed = std::time(nullptr) % 100000;
+  if (argc > 1) {
+    std::istringstream ss {argv[1]};
+    ss >> seed;
+  }
+  std::cout << "Starting seed: " << seed << std::endl;
+  int N_SEEDS = 20;
+  for (int s = 0; s < N_SEEDS; s++) {
+    std::cerr << "Starting seed " << s << std::endl;
+    run_seed(seed + 50*s);
+  }
 }

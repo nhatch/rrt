@@ -7,6 +7,7 @@ float KinematicMPPI::VEL_MAX = 1.f;
 float KinematicMPPI::TRACK = 0.545f;
 constexpr bool LEARN_COVARIANCE = false;
 constexpr bool FULL_COVARIANCE = false;
+const GraphNode *nominal_terminal_node = nullptr;
 
 ArrayXf reshape(ArrayXXf array, size_t size) {
   assert(array.size() == size);
@@ -268,7 +269,10 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
       int terminal_state_idx = (i+1)*(horizon_+1) - 1;
       StateArrayf x = states.col(terminal_state_idx);
       double t_cost;
-      graph.nearestNode(x, task_, &t_cost);
+      const GraphNode *nearest = graph.nearestNode(x, task_, &t_cost);
+      if (rollouts == 1) {
+        nominal_terminal_node = nearest;
+      }
       traj_costs(i) += t_cost/MAX_DIFF;
     }
   }

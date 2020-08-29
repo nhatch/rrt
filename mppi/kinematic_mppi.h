@@ -31,6 +31,7 @@ typedef struct SampledTrajs {
 
 ArrayXf reshape(ArrayXXf array, size_t size);
 ArrayXXf reshape(ArrayXXf array, size_t rows, size_t cols);
+extern const GraphNode *nominal_terminal_node;
 
 class KinematicMPPI {
   public:

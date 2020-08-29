@@ -1,4 +1,5 @@
 *.o
-a.out
+*.out
 *.swp
 *costmap*.txt*
+results.txt

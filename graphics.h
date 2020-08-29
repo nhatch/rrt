@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 
 void drawGraph(const graph_t &graph, const Task &task);
-void drawStuff(const Config &config, const Task &task, const graph_t &graph);
 void drawConfig(const Config &config, sf::Color color = sf::Color::Green, bool point_only = false);
 void doneDrawingStuff();
 void animatePath(const GraphNode *path, const Task &task, const graph_t &graph,
