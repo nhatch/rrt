@@ -78,6 +78,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
 
   double path_cost = 0.0;
   int n_steps = 0;
+  int n_steps_lost = 0;
   int n_steps_on_min_graph = 0;
   int collisions = 0;
   long total_elapsed_usecs = 0;
@@ -124,7 +125,9 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     path_cost += distanceFrom(prev, current);
     n_steps += 1;
     if (!deterministic) {
-      if (min_graph.nodeForConfig(nominal_terminal_node->config) != nullptr) {
+      if (nominal_terminal_node == nullptr) {
+        n_steps_lost += 1;
+      } else if (min_graph.nodeForConfig(nominal_terminal_node->config) != nullptr) {
         n_steps_on_min_graph += 1;
       }
     }
@@ -149,8 +152,8 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   }
   printf("Result:\n"
          "  Path length:           %f (%d collisions)\n"
-         "  Control steps:         %d\n"
+         "  Control steps:         %d (%d lost)\n"
          "  Min graph steps:       %d\n"
          "  Time per control (us): %ld\n",
-      path_cost, collisions, n_steps, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
+      path_cost, collisions, n_steps, n_steps_lost, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
 }
