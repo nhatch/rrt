@@ -139,8 +139,10 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
     rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
     if (rrt_star_rad > ETA) rrt_star_rad = ETA;
     //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
-    for (nodelist_t& list : graph.buckets_) {
-      for (GraphNode *node : list) {
+    std::vector<int> buckets_to_check({});
+    graph.getBucketsAsList(steered, buckets_to_check);
+    for (int idx : buckets_to_check) {
+      for (GraphNode *node : graph.buckets_[idx]) {
         double distance = distanceFrom(steered, node->config);
         if (distance < rrt_star_rad) {
           bool noCollision;
