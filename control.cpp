@@ -106,7 +106,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
       drawConfig(mppi.nearest_, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
     }
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
-    for (int i = 0; i < seq.cols(); i++) {
+    for (int i = seq.cols()-1; i >= 0; i--) {
       if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
         if (i == 0) {

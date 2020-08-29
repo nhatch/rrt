@@ -76,8 +76,8 @@ void value_iterate(graph_t &graph) {
   }
 }
 
-GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
-  GraphNode *existingNode = graph.nodeForConfig(task.end);
+GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphNode *root) {
+  GraphNode *existingNode = root;
   double min_dist = distanceFrom(config, existingNode->config);
   //bool needsSplitNode = false;
   //bool bestNeedsSplitNode = false;
@@ -180,7 +180,8 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task) {
 }
 
 GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
-  GraphNode *current = graph.nodeForConfig(task.end);
+  GraphNode * const root = graph.nodeForConfig(task.end);
+  GraphNode *current = root;
   int iter = 0;
   std::vector<Config> manual_samples({});
   manual_samples.push_back({ 0.3, 0.0, 0.0});
@@ -199,7 +200,7 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
         c = randConfig();
       }
     }
-    current = insert(graph, c, task);
+    current = insert(graph, c, task, root);
     drawGraph(graph, task);
     doneDrawingStuff();
   }

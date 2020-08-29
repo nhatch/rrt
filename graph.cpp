@@ -42,8 +42,13 @@ GraphNode* graph_t::nodeForConfig(const Config &c) {
   int b_x, b_y, b_th;
   int d_x, d_y, d_th;
   getBuckets(c, &b_x, &b_y, &b_th, &d_x, &d_y, &d_th);
-  const nodelist_t &list = buckets_[bucketsToIndex(b_x, b_y, b_th)];
-  return list[0];
+  int idx = bucketsToIndex(b_x, b_y, b_th);
+  const nodelist_t &list = buckets_[idx];
+  for (GraphNode *node : list) {
+    if (distanceFrom(node->config, c) < 0.000001)
+      return node;
+  }
+  return nullptr;
 }
 
 const GraphNode* graph_t::nearestNode(const Config &config, const Task &task, double *cost) const {
