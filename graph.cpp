@@ -4,8 +4,8 @@
 
 void getBuckets(const Config &c, int *b_x, int *b_y, int *b_th, int *d_x, int *d_y, int *d_th) {
   constexpr double BUCKET_SIDE = 0.2 * 2;
-  double bucket_x = floor((c(0) - MIN_X) / BUCKET_SIDE);
-  double bucket_y = floor((c(1) - MIN_Y) / BUCKET_SIDE);
+  double bucket_x = (c(0) - MIN_X) / BUCKET_SIDE;
+  double bucket_y = (c(1) - MIN_Y) / BUCKET_SIDE;
   double thetaDiff = fmod(c(2), 2*M_PI);
   if (thetaDiff < 0)
     thetaDiff += 2*M_PI;
@@ -64,8 +64,10 @@ void graph_t::getBucketsAsList(const Config &c, std::vector<int> &result) const 
       if (y < 0 || y >= G_Y_LEN) continue;
       for (int ith = 0; ith <= abs(d_th); ith++) {
         int th = b_th + ith*d_th;
-        if (th < 0 || th >= G_TH_LEN) continue;
-        result.push_back(bucketsToIndex(x, y, th));
+        if (th < 0)          th += G_TH_LEN;
+        if (th >= G_TH_LEN)  th -= G_TH_LEN;
+        int idx = bucketsToIndex(x, y, th);
+        result.push_back(idx);
       }
     }
   }
