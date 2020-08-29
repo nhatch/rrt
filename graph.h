@@ -42,6 +42,7 @@ public:
   graph_t();
   GraphNode *nodeForConfig(const Config &c);
   const GraphNode *nearestNode(const Config &c, const Task &task, double *cost) const;
+  void getBucketsAsList(const Config &c, std::vector<int> &result) const;
   void insert(GraphNode *node);
   int size() const;
 };
