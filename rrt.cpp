@@ -15,6 +15,8 @@
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
+int N_SEEDS = 20;
+int N_REPEATS = 5;
 
 /* Consider the node only, rather than the line from that node to its parents.
  * This does not use split nodes. */
@@ -223,7 +225,7 @@ void set_seed(int seed) {
   std::srand(seed);
 }
 
-void run_seed(int seed) {
+void run_seed(int seed, int control_seed, int mode) {
   set_seed(seed);
 
   // Give the vertices in clockwise order
@@ -283,21 +285,26 @@ void run_seed(int seed) {
   }
   std::cout << "done.\n";
 
-  int N_REPEATS = 5;
-  std::cout << "NAIVE\n";
-  for (int i = 0; i < N_REPEATS; i++) {
-    set_seed(++seed);
-    doControl(path, task, costmap, graph, min_graph, false, true);
+  if (mode == 0 || mode == 1) {
+    std::cout << "NAIVE\n";
+    for (int i = 0; i < N_REPEATS; i++) {
+      set_seed(control_seed++);
+      doControl(path, task, costmap, graph, min_graph, false, true);
+    }
   }
-  std::cout << "MPPI (full)\n";
-  for (int i = 0; i < N_REPEATS; i++) {
-    set_seed(++seed);
-    doControl(path, task, costmap, graph, min_graph, false, false);
+  if (mode == 0 || mode == 2) {
+    std::cout << "MPPI (full)\n";
+    for (int i = 0; i < N_REPEATS; i++) {
+      set_seed(control_seed++);
+      doControl(path, task, costmap, graph, min_graph, false, false);
+    }
   }
-  std::cout << "MPPI (min)\n";
-  for (int i = 0; i < N_REPEATS; i++) {
-    set_seed(++seed);
-    doControl(path, task, costmap, min_graph, min_graph, false, false);
+  if (mode == 0 || mode == 3) {
+    std::cout << "MPPI (min)\n";
+    for (int i = 0; i < N_REPEATS; i++) {
+      set_seed(control_seed++);
+      doControl(path, task, costmap, min_graph, min_graph, false, false);
+    }
   }
 
   destroyGraph(&graph);
@@ -307,14 +314,23 @@ int main(int argc, char *argv[]) {
   //std::cout.precision(2);
   //std::cout << std::fixed;
   unsigned int seed = std::time(nullptr) % 100000;
+  unsigned int control_seed = seed;
+  int mode = 0; // indicates "run all three"
   if (argc > 1) {
+    N_SEEDS = 1;
     std::istringstream ss {argv[1]};
     ss >> seed;
+    if (argc > 2) {
+      N_REPEATS = 1;
+      std::istringstream ss2 {argv[2]};
+      ss2 >> control_seed;
+      std::istringstream ss3 {argv[3]};
+      ss3 >> mode;
+    }
   }
   std::cout << "Starting seed: " << seed << std::endl;
-  int N_SEEDS = 20;
   for (int s = 0; s < N_SEEDS; s++) {
     std::cerr << "Starting seed " << s << std::endl;
-    run_seed(seed + 50*s);
+    run_seed(seed + 50*s, control_seed, mode);
   }
 }
