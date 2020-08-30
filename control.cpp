@@ -56,7 +56,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     next_stepwise_target = path->parent;
   }
   bool done = false;
-  struct timeval tp0, tp1;
+  struct timeval tp0, tp1, tp_start;
   double secsPerFrame = 1/CONTROL_HZ;
 
   MPPILocalPlannerConfig mppi_config;
@@ -83,6 +83,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   int collisions = 0;
   long total_elapsed_usecs = 0;
   bool printedWarning = false;
+  gettimeofday(&tp_start, NULL);
   while (!done) {
     gettimeofday(&tp0, NULL);
     StateArrayf x = current;
@@ -140,20 +141,26 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     }
 
     gettimeofday(&tp1, NULL);
+    long totalElapsedUsecs = (tp1.tv_sec - tp_start.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp_start.tv_usec);
+    if (totalElapsedUsecs > 120 * 1000 * 1000) break; // we've been stuck for two minutes
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
     total_elapsed_usecs += elapsedUsecs;
+    /*
     if (desiredUsecs > elapsedUsecs) {
       usleep(desiredUsecs - elapsedUsecs);
     } else if (!printedWarning) {
       printedWarning = true;
       printf("Warning: can't keep up with control freq (%ld, %ld)\n", desiredUsecs/1000, elapsedUsecs/1000);
     }
+    */
   }
   printf("Result:\n"
+         "  Success:               %d\n"
          "  Path length:           %f (%d collisions)\n"
          "  Control steps:         %d (%d lost)\n"
          "  Min graph steps:       %d\n"
          "  Time per control (us): %ld\n",
-      path_cost, collisions, n_steps, n_steps_lost, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
+      done, path_cost, collisions,
+      n_steps, n_steps_lost, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
 }
