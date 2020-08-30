@@ -314,19 +314,19 @@ int main(int argc, char *argv[]) {
   //std::cout.precision(2);
   //std::cout << std::fixed;
   unsigned int seed = std::time(nullptr) % 100000;
-  unsigned int control_seed = seed;
-  int mode = 0; // indicates "run all three"
   if (argc > 1) {
     N_SEEDS = 1;
     std::istringstream ss {argv[1]};
     ss >> seed;
-    if (argc > 2) {
-      N_REPEATS = 1;
-      std::istringstream ss2 {argv[2]};
-      ss2 >> control_seed;
-      std::istringstream ss3 {argv[3]};
-      ss3 >> mode;
-    }
+  }
+  unsigned int control_seed = seed;
+  int mode = 0; // indicates "run all three"
+  if (argc > 2) {
+    N_REPEATS = 1;
+    std::istringstream ss2 {argv[2]};
+    ss2 >> control_seed;
+    std::istringstream ss3 {argv[3]};
+    ss3 >> mode;
   }
   std::cout << "Starting seed: " << seed << std::endl;
   for (int s = 0; s < N_SEEDS; s++) {

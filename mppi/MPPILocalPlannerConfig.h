@@ -21,7 +21,7 @@ struct MPPILocalPlannerConfig {
   float speed_cost_threshold = 1.f;
   float speed_cost_weight = 0.f;
   float theta_weight = 1.f;
-  float mppi_temperature = 1.f; // TODO what's the right temp?
+  float mppi_temperature = 1.5f; // This seems to avoid getting stuck and also avoid collisions
 };
 
 #endif
