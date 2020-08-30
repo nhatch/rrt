@@ -5,10 +5,10 @@ DEPS=config.o rrt.o collision.o control.o mppi/kinematic_mppi.o mppi/stick_mppi.
 ROS_LINK=-L /opt/ros/melodic/lib -lboost_system
 SFML_LINK=-lsfml-graphics -lsfml-window -lsfml-system
 
-target: rrt headless
+target: viz headless
 
-rrt: $(DEPS) graphics.o
-	$(CC) $(DEPS) graphics.o $(ROS_LINK) $(SFML_LINK) -o rrt.out
+viz: $(DEPS) graphics.o
+	$(CC) $(DEPS) graphics.o $(ROS_LINK) $(SFML_LINK) -o viz.out
 
 headless: $(DEPS) headless_graphics.o
 	$(CC) $(DEPS) headless_graphics.o $(ROS_LINK) $(SFML_LINK) -o headless.out
