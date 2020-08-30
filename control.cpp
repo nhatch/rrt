@@ -163,4 +163,5 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
          "  Time per control (us): %ld\n",
       done, path_cost, collisions,
       n_steps, n_steps_lost, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
+  std::cout << std::flush;
 }
