@@ -119,7 +119,6 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
         }
       }
     }
-    doneDrawingStuff();
 
     Config prev = current;
     done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
@@ -128,10 +127,14 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     if (!deterministic) {
       if (nominal_terminal_node == nullptr) {
         n_steps_lost += 1;
-      } else if (min_graph.nodeForConfig(nominal_terminal_node->config) != nullptr) {
-        n_steps_on_min_graph += 1;
+      } else {
+        drawConfig(nominal_terminal_node->config, sf::Color(255, 0, 0, 255), RENDER_CONFIG_SPACE);
+        if (min_graph.nodeForConfig(nominal_terminal_node->config) != nullptr) {
+          n_steps_on_min_graph += 1;
+        }
       }
     }
+    doneDrawingStuff();
 
     Config noise = randConfig() * MOTION_NOISE;
     current = current + noise;
