@@ -225,14 +225,67 @@ void set_seed(int seed) {
   std::srand(seed);
 }
 
-void run_seed(int seed, int control_seed, int mode) {
+const obstacle_t &make_blob(double x, double y, double s) {
+  const obstacle_t *blob = new obstacle_t {
+    {x+s, y+s}, {x+s, y-s}, {x-s, y-s}, {x-s, y+s}
+  };
+  return *blob;
+}
+
+void run_seed(int seed, int control_seed, std::string &mode, std::string& task_name) {
   set_seed(seed);
 
+
   // Give the vertices in clockwise order
-  const obstacle_t obs1 {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
-  const obstacle_t obs2 {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
-  const Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
-  Task task {start, end, {obs1, obs2}};
+  std::vector<obstacle_t> obstacles({});
+  Config start {-0.8, -0.8, M_PI/2}, end {0.8, -0.8, M_PI/2};
+  if (task_name == "gate")
+  {
+    const obstacle_t *obs1 = new obstacle_t {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
+    const obstacle_t *obs2 = new obstacle_t {{0.1, 1}, {0.1, 0.05}, {-0.1, 0.05}, {-0.1, 1}};
+    obstacles.push_back(*obs1);
+    obstacles.push_back(*obs2);
+  }
+  else if (task_name == "bugtrap")
+  {
+    const obstacle_t *obs1 = new obstacle_t {{-0.1, -1}, {-0.1, -0.05}, {0.1, -0.05}, {0.1, -1}};
+    const obstacle_t *obs2 = new obstacle_t {{0.8, -0.1}, {-0.8, -0.1}, {-0.8, 0.1}, {0.8, 0.1}};
+    obstacles.push_back(*obs1);
+    obstacles.push_back(*obs2);
+  }
+  else if (task_name == "forest")
+  {
+    double s = 0.05;
+    obstacles.push_back(make_blob(0.0,0.0,s));
+    obstacles.push_back(make_blob(0.2,0.2,s));
+    obstacles.push_back(make_blob(0.3,-0.7,s));
+    obstacles.push_back(make_blob(0.4,0.0,s));
+    obstacles.push_back(make_blob(0.5,0.2,s));
+    obstacles.push_back(make_blob(0.6,-0.3,s));
+    obstacles.push_back(make_blob(-0.1,-0.4,s));
+    obstacles.push_back(make_blob(-0.2,0.5,s));
+    obstacles.push_back(make_blob(-0.3,0.6,s));
+    obstacles.push_back(make_blob(-0.4,-0.3,s));
+    obstacles.push_back(make_blob(-0.5,0.0,s));
+    // Can break here for sparse forest
+    obstacles.push_back(make_blob(-0.3,-0.4,s));
+    obstacles.push_back(make_blob(-0.1,-0.2,s));
+    obstacles.push_back(make_blob(0.0,-0.9,s));
+    obstacles.push_back(make_blob(0.1,-0.4,s));
+    obstacles.push_back(make_blob(0.2,0.4,s));
+    obstacles.push_back(make_blob(0.3,-0.5,s));
+    obstacles.push_back(make_blob(-0.4,-0.8,s));
+    obstacles.push_back(make_blob(-0.5,0.2,s));
+    obstacles.push_back(make_blob(-0.6,0.3,s));
+    obstacles.push_back(make_blob(-0.7,-0.5,s));
+  }
+  else if (task_name == "blob")
+  {
+    obstacles.push_back(make_blob(0.0,0.0,0.5));
+    end(1) = 0.8; // upper right instead of lower right
+  }
+
+  Task task {start, end, obstacles};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
   graph_t graph;
   graph.insert(g_root);
@@ -251,8 +304,8 @@ void run_seed(int seed, int control_seed, int mode) {
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   costmap.fill(0);
 
-  std::string costmap_fname = "costmaps/costmap_" + std::to_string(seed) + ".txt";
-  if (!FULL_COSTMAP) costmap_fname = "costmaps/costmap_obstacles_only.txt";
+  std::string costmap_fname = "costmaps/costmap_" + task_name + "_" + std::to_string(seed) + ".txt";
+  if (!FULL_COSTMAP) costmap_fname = "costmaps/costmap_" + task_name + "_obstacles_only.txt";
   if (arrayExists(costmap_fname))
   {
     loadArray(costmap, costmap_fname);
@@ -285,21 +338,21 @@ void run_seed(int seed, int control_seed, int mode) {
   }
   std::cout << "done.\n";
 
-  if (mode == 0 || mode == 1) {
+  if (mode == "all" || mode == "naive") {
     std::cout << "NAIVE\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
       doControl(path, task, costmap, graph, min_graph, false, true);
     }
   }
-  if (mode == 0 || mode == 2) {
+  if (mode == "all" || mode == "mppi_full") {
     std::cout << "MPPI (full)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
       doControl(path, task, costmap, graph, min_graph, false, false);
     }
   }
-  if (mode == 0 || mode == 3) {
+  if (mode == "all" || mode == "mppi_min") {
     std::cout << "MPPI (min)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
@@ -314,23 +367,35 @@ int main(int argc, char *argv[]) {
   //std::cout.precision(2);
   //std::cout << std::fixed;
   unsigned int seed = std::time(nullptr) % 100000;
+  std::string task_name = "gate";
   if (argc > 1) {
+    task_name = argv[1];
+  }
+  if (argc > 2) {
     N_SEEDS = 1;
-    std::istringstream ss {argv[1]};
+    std::istringstream ss {argv[2]};
     ss >> seed;
   }
   unsigned int control_seed = seed;
-  int mode = 0; // indicates "run all three"
-  if (argc > 2) {
+  std::string mode = "all";
+  if (argc > 3) {
     N_REPEATS = 1;
-    std::istringstream ss2 {argv[2]};
+    std::istringstream ss2 {argv[3]};
     ss2 >> control_seed;
-    std::istringstream ss3 {argv[3]};
-    ss3 >> mode;
+    mode = argv[4];
+  }
+  if (task_name != "gate" && task_name != "bugtrap" && task_name != "forest" && task_name != "blob") {
+    std::cout << "Invalid task name; aborting\n";
+    return 1;
+  }
+  if (mode != "all" && mode != "naive" && mode != "mppi_full" && mode != "mppi_min") {
+    std::cout << "Invalid mode; aborting\n";
+    return 2;
   }
   std::cout << "Starting seed: " << seed << std::endl;
   for (int s = 0; s < N_SEEDS; s++) {
     std::cerr << "Starting seed " << s << std::endl;
-    run_seed(seed + 50*s, control_seed, mode);
+    run_seed(seed + 50*s, control_seed, mode, task_name);
   }
+  return 0;
 }
