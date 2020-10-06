@@ -99,7 +99,7 @@ void KinematicMPPI::shift(const StateArrayf& state) {
   U_.col(sample_horizon_-1).setZero();
 }
 
-void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph, bool adaptive_cost) {
+void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, const graph_t& graph, bool adaptive_cost, const Task &task) {
   if (iters_since_reset_ > 0) {
     float prediction_error = (state - predicted_next_state_).matrix().norm();
     avg_prediction_error_ = (avg_prediction_error_ * (iters_since_reset_-1) + prediction_error) / iters_since_reset_;
@@ -110,8 +110,8 @@ void KinematicMPPI::optimize(const StateArrayf& state, const ArrayXXb& costmap, 
     SampledTrajs samples = sampleTrajs(state);
     recent_samples_ = samples; // for debugging
     nominal_traj_ = { rolloutNominalSeq(state), U_ };
-    nominal_cost_ = computeCost(nominal_traj_, costmap, graph, adaptive_cost)(0);
-    ArrayXf traj_costs = computeCost(samples, costmap, graph, adaptive_cost);
+    nominal_cost_ = computeCost(nominal_traj_, costmap, graph, adaptive_cost, task)(0);
+    ArrayXf traj_costs = computeCost(samples, costmap, graph, adaptive_cost, task);
     updateControlSeq(samples.U_trajs, traj_costs);
   }
 }
@@ -189,7 +189,7 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   return X_next;
 }
 
-ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph, bool adaptive_carrot) {
+ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costmap, const graph_t& graph, bool adaptive_carrot, const Task &task) {
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
 

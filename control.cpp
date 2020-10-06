@@ -39,7 +39,7 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
       mppi.setGoal(target);
     }
 
-    mppi.optimize(x, costmap, graph, adaptive_carrot);
+    mppi.optimize(x, costmap, graph, adaptive_carrot, task);
     command = mppi.pop(x);
   }
 
