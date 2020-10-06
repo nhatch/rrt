@@ -34,6 +34,14 @@ bool collides(const Config &config, const Task &task, double clearance) {
         return true;
     }
   }
+  for (projectile_t p : task.projectiles) {
+    for (point2d_t ball : balls) {
+      double dx = p[0] - ball[0];
+      double dy = p[1] - ball[1];
+      double dist = sqrt(dx*dx + dy*dy);
+      if (dist < clearance + PROJECTILE_RADIUS) return true;
+    }
+  }
   return false;
 }
 

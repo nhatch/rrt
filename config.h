@@ -13,6 +13,7 @@ constexpr double MAX_Y = 1.0;
 constexpr double LENGTH = 0.2;
 constexpr size_t N_BALLS = 11;
 constexpr double BALL_RADIUS = LENGTH / (N_BALLS - 1);
+constexpr double PROJECTILE_RADIUS = 0.05;
 
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
@@ -24,6 +25,7 @@ using ArrayXXb = Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic>;
 
 using Config = Eigen::Array<float, 1, 3>;
 
+double randf();
 Config randConfig();
 balls_t getBalls(const Config &c);
 double distanceFrom(const Config &c1, const Config &c2);

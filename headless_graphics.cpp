@@ -37,3 +37,6 @@ void drawTexture(const sf::Texture& tex) {
 
 void doneDrawingStuff() {
 }
+
+void drawProjectiles(const Task& task) {
+}

@@ -86,6 +86,13 @@ void drawTask(const Task &task) {
   }
 }
 
+void drawProjectiles(const Task &task) {
+  double pixelRadius = PROJECTILE_RADIUS * scale_x;
+  for (projectile_t p : task.projectiles) {
+    drawBall(p, pixelRadius, sf::Color(255, 0, 0, 255));
+  }
+}
+
 // We'll only draw the "best" paths in the graph, RRT* basically
 void drawGraph(const graph_t &graph) {
   for (const nodelist_t& list : graph.buckets_) {

@@ -285,7 +285,8 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     end(1) = 0.8; // upper right instead of lower right
   }
 
-  Task task {start, end, obstacles};
+  std::vector<projectile_t> projectiles;
+  Task task {start, end, obstacles, projectiles};
   GraphNode *g_root = new GraphNode {end, {}, {}, nullptr, 0.0};
   graph_t graph;
   graph.insert(g_root);

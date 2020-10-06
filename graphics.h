@@ -15,5 +15,6 @@ void animatePath(const GraphNode *path, const Task &task, const graph_t &graph,
 sf::Texture render(const graph_t &graph, const Task &task);
 sf::Texture render(const ArrayXXb& costmap, int theta_offset);
 void drawTexture(const sf::Texture& tex);
+void drawProjectiles(const Task &task);
 
 #endif

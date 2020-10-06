@@ -48,7 +48,20 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
   return false;
 }
 
-void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
+void moveProjectiles(Task &task) {
+  for (projectile_t &p : task.projectiles) {
+    p[0] += (randf()-0.5) * 0.02;
+    p[1] += (randf()-0.5) * 0.02;
+  }
+}
+
+void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
+  task.projectiles.push_back({0.0, 0.0});
+  task.projectiles.push_back({0.8, 0.0});
+  task.projectiles.push_back({-0.8, 0.0});
+  task.projectiles.push_back({0.0, 0.8});
+  task.projectiles.push_back({0.0, -0.8});
+
   Config current = path->config;
   if (!deterministic) {
     next_stepwise_target = graph.nodeForConfig(task.end);
@@ -86,6 +99,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
   gettimeofday(&tp_start, NULL);
   while (!done) {
     gettimeofday(&tp0, NULL);
+    moveProjectiles(task);
     StateArrayf x = current;
     if (RENDER_CONFIG_SPACE) {
       int theta_idx = floor(current(2) / COST_RESOLUTION_TH + 0.5);
@@ -95,6 +109,7 @@ void doControl(const GraphNode *path, const Task &task, const ArrayXXb& costmap,
     } else {
       drawTexture(task_space_render);
     }
+    drawProjectiles(task);
     SampledTrajs asdf = mppi.recent_samples_;
     int n_trajs = asdf.X_trajs.cols();
     int traj_len = asdf.X_trajs.rows();
