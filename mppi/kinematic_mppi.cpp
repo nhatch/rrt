@@ -193,11 +193,8 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   int rollouts = samples.X_trajs.size() / STATE_DIM / (horizon_+1);
   ArrayXXf states = reshape(samples.X_trajs, STATE_DIM, (horizon_+1)*rollouts);
 
-  ArrayXf terrain_flat_inflated;
   ArrayXf terrain_flat_lethal;
-  terrain_flat_inflated.resize(states.outerSize());
   terrain_flat_lethal.resize(states.outerSize());
-  terrain_flat_inflated.setZero();
   terrain_flat_lethal.setZero();
   unsigned int mx, my;
   Eigen::Array<int,Eigen::Dynamic,Eigen::Dynamic> map_posns;
@@ -218,6 +215,31 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     } else {
       terrain_flat_lethal(i) = (float)raw_cost / 255.f;
     }
+  }
+
+  // COMPUTE COLLISIONS WITH DYNAMIC OBSTACLES. dang this is a lot of work
+
+  ArrayXf dynamic_lethal;
+  dynamic_lethal.resize(states.outerSize());
+  dynamic_lethal.setZero();
+
+  ArrayXXf balls = states.topRows(2);
+  ArrayXXf directions = balls;
+  directions.row(0) = cos(states.row(2));
+  directions.row(1) = sin(states.row(2));
+  balls -= LENGTH * 0.5 * directions;
+  double lethal_dist_thresh = 2*BALL_RADIUS + PROJECTILE_RADIUS;
+  for (size_t i = 0; i < 2; i++) {
+    for (projectile_t p : task.projectiles) {
+      ArrayXf eigp;
+      eigp.resize(2);
+      eigp(0) = p[0];
+      eigp(1) = p[1];
+      ArrayXf distances = (balls.colwise() - eigp).matrix().colwise().norm().array();
+      dynamic_lethal += ((lethal_dist_thresh - distances) / lethal_dist_thresh).max(0);
+
+    }
+    balls += (N_BALLS-1)*BALL_RADIUS * directions;
   }
 
   if (adaptive_carrot) {
@@ -241,7 +263,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   // Subtract the minimum distance so that even when the robot is very far from the goal,
   // the distance cost will be roughly balanced with the obstacle/speed costs.
   //dist2goal_flat -= dist2goal_flat.minCoeff();
-  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal);
+  ArrayXf costs_flat = collision_cost_*(terrain_flat_lethal + dynamic_lethal);
                        //+ dist2goal_flat;
                        //+ speed_costs_flat
                        //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
