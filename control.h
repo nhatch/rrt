@@ -10,6 +10,7 @@ const double CONTROL_HZ = 30;
 const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 
+constexpr bool DYNAMIC_OBSTACLES = true;
 const bool NEAREST_NEIGHBOR = true;
 const bool FULL_COSTMAP = !NEAREST_NEIGHBOR && true;
 const double MOTION_NOISE = 0.005;

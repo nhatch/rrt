@@ -56,11 +56,13 @@ void moveProjectiles(Task &task) {
 }
 
 void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
-  task.projectiles.push_back({0.0, 0.0});
-  task.projectiles.push_back({0.8, 0.0});
-  task.projectiles.push_back({-0.8, 0.0});
-  task.projectiles.push_back({0.0, 0.8});
-  task.projectiles.push_back({0.0, -0.8});
+  if (DYNAMIC_OBSTACLES) {
+    task.projectiles.push_back({0.0, 0.0});
+    task.projectiles.push_back({0.8, 0.0});
+    task.projectiles.push_back({-0.8, 0.0});
+    task.projectiles.push_back({0.0, 0.8});
+    task.projectiles.push_back({0.0, -0.8});
+  }
 
   Config current = path->config;
   if (!deterministic) {
