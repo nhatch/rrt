@@ -10,7 +10,13 @@ const double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
 const double MAX_COST = 10.0; // Optimal path cost is something like 4.3
 
 using obstacle_t = std::vector<point2d_t>;
-using projectile_t = point2d_t;
+struct projectile_t {
+  Eigen::Array<float,1,2> location;
+  Eigen::Array<float,1,2> velocity;
+
+  projectile_t(float x, float y) : location(x,y), velocity(0,0) {
+  }
+};
 
 struct Task {
   const Config &start;

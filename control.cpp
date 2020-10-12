@@ -50,8 +50,10 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
 
 void moveProjectiles(Task &task) {
   for (projectile_t &p : task.projectiles) {
-    p[0] += (randf()-0.5) * 0.02;
-    p[1] += (randf()-0.5) * 0.02;
+    p.velocity *= 0.95;
+    p.velocity(0) += (randf()-0.5) * 0.01;
+    p.velocity(1) += (randf()-0.5) * 0.01;
+    p.location += p.velocity;
   }
 }
 
@@ -62,6 +64,10 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     task.projectiles.push_back({-0.8, 0.0});
     task.projectiles.push_back({0.0, 0.8});
     task.projectiles.push_back({0.0, -0.8});
+    task.projectiles.push_back({0.4, 0.4});
+    task.projectiles.push_back({0.4, -0.4});
+    task.projectiles.push_back({-0.4, -0.4});
+    task.projectiles.push_back({-0.4, 0.4});
   }
 
   Config current = path->config;

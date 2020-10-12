@@ -21,8 +21,8 @@ bool leftOf(const point2d_t query, const point2d_t p0, const point2d_t p1, doubl
 
 bool collides(const Config &config, const Task &task, double clearance) {
   balls_t balls = getBalls(config);
-  for (obstacle_t obs : task.obstacles) {
-    for (point2d_t ball : balls) {
+  for (const obstacle_t &obs : task.obstacles) {
+    for (point2d_t &ball : balls) {
       bool possibleCollision = true;
       for (size_t i = 0; possibleCollision && i < obs.size(); i++) {
         point2d_t p0 = obs[i];
@@ -34,10 +34,10 @@ bool collides(const Config &config, const Task &task, double clearance) {
         return true;
     }
   }
-  for (projectile_t p : task.projectiles) {
-    for (point2d_t ball : balls) {
-      double dx = p[0] - ball[0];
-      double dy = p[1] - ball[1];
+  for (projectile_t &p : task.projectiles) {
+    for (point2d_t &ball : balls) {
+      double dx = p.location(0) - ball[0];
+      double dy = p.location(1) - ball[1];
       double dist = sqrt(dx*dx + dy*dy);
       if (dist < clearance + PROJECTILE_RADIUS) return true;
     }

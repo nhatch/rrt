@@ -46,7 +46,7 @@ void clear() {
   window.clear(sf::Color::White);
 }
 
-void drawBall(point2d_t& ball, double pixelRadius, sf::Color color) {
+void drawBall(const point2d_t& ball, double pixelRadius, sf::Color color) {
   sf::CircleShape circle(pixelRadius);
   circle.setFillColor(color);
   sf::Vector2f pos = toVector(ball);
@@ -89,7 +89,7 @@ void drawTask(const Task &task) {
 void drawProjectiles(const Task &task) {
   double pixelRadius = PROJECTILE_RADIUS * scale_x;
   for (projectile_t p : task.projectiles) {
-    drawBall(p, pixelRadius, sf::Color(255, 0, 0, 255));
+    drawBall({p.location(0), p.location(1)}, pixelRadius, sf::Color(255, 0, 0, 255));
   }
 }
 

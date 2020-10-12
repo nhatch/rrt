@@ -228,18 +228,19 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   directions.row(0) = cos(states.row(2));
   directions.row(1) = sin(states.row(2));
   balls -= LENGTH * 0.5 * directions;
-  double lethal_dist_thresh = 2*BALL_RADIUS + PROJECTILE_RADIUS;
-  for (size_t i = 0; i < 2; i++) {
-    for (projectile_t p : task.projectiles) {
-      ArrayXf eigp;
-      eigp.resize(2);
-      eigp(0) = p[0];
-      eigp(1) = p[1];
-      ArrayXf distances = (balls.colwise() - eigp).matrix().colwise().norm().array();
-      dynamic_lethal += ((lethal_dist_thresh - distances) / lethal_dist_thresh).max(0);
+  double lethal_dist_thresh = 3*BALL_RADIUS + PROJECTILE_RADIUS;
+  double stick_len = (N_BALLS-1)*BALL_RADIUS;
+  double n_tests = 3;
+  for (size_t i = 0; i < n_tests; i++) {
+    for (projectile_t &p : task.projectiles) {
+      Eigen::Array<float,2,1> eigp = p.location;
+      if ((balls.col(0)-eigp).matrix().norm() < 4*lethal_dist_thresh) {
+        ArrayXf distances = (balls.colwise() - eigp).matrix().colwise().norm().array();
+        dynamic_lethal += ((lethal_dist_thresh - distances) / lethal_dist_thresh).max(0);
+      }
 
     }
-    balls += (N_BALLS-1)*BALL_RADIUS * directions;
+    balls += LENGTH/(n_tests-1) * directions;
   }
 
   if (adaptive_carrot) {
