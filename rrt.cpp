@@ -96,6 +96,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
       if (d < min_dist) {
         min_dist = d;
         existingNode = node;
+        if (min_dist < ETA) return existingNode; // too close to existing graph, not useful
         //bestSplitConfig = splitConfig;
         //bestNeedsSplitNode = needsSplitNode;
       }
@@ -183,7 +184,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
   return existingNode;
 }
 
-GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=0.001) {
+GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=ETA*2) {
   GraphNode * const root = graph.nodeForConfig(task.end);
   GraphNode *current = root;
   int iter = 0;

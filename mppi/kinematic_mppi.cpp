@@ -234,7 +234,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   for (size_t i = 0; i < n_tests; i++) {
     for (projectile_t &p : task.projectiles) {
       Eigen::Array<float,2,1> eigp = p.location;
-      if ((balls.col(0)-eigp).matrix().norm() < 4*lethal_dist_thresh) {
+      if ((balls.col(0)-eigp).matrix().norm() < 2*lethal_dist_thresh) {
         ArrayXf distances = (balls.colwise() - eigp).matrix().colwise().norm().array();
         dynamic_lethal += ((lethal_dist_thresh - distances) / lethal_dist_thresh).max(0);
       }
