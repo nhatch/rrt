@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "Starting seed: " << seed << std::endl;
   for (int s = 0; s < N_SEEDS; s++) {
-    std::cerr << "Starting seed " << s << std::endl;
+    std::cerr << "Starting trial " << s << std::endl;
     run_seed(seed + 50*s, control_seed, mode, task_name);
   }
   return 0;
