@@ -13,7 +13,7 @@
 #include "graphics.h"
 #include "control.h"
 
-GraphNode *next_stepwise_target;
+const GraphNode *next_stepwise_target;
 
 Config getNextConfig(StateArrayf *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic, bool *done) {
@@ -78,12 +78,12 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
 
   StateArrayf current;
   current *= 0;
-  current.topRows(3) = path->config;
+  current.topRows(3) = task.start;
 
   if (!deterministic) {
     next_stepwise_target = graph.nodeForConfig(task.end);
   } else {
-    next_stepwise_target = path->parent;
+    next_stepwise_target = path;
   }
   bool done = false;
   struct timeval tp0, tp1, tp_start;

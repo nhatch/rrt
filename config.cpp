@@ -12,7 +12,7 @@ Config randConfig() {
   Config r;
   r <<  MIN_X + randf()*(MAX_X-MIN_X),
         MIN_Y + randf()*(MAX_Y-MIN_Y),
-        2*M_PI*randf();
+        2*M_PI*(randf()-0.5);
   return r;
 }
 
