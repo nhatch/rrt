@@ -15,20 +15,25 @@
 
 GraphNode *next_stepwise_target;
 
-bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
-    const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic) {
+Config getNextConfig(StateArrayf *current, const GraphNode *path, const Task &task,
+    const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic, bool *done) {
 
   Config target = next_stepwise_target->config;
-  double d = distanceFrom(*current, target);
+  Eigen::Array<float,3,1> current_state = current->topRows(3);
+  double d = distanceFrom(current_state, target);
+  Config command;
+  command *= 0;
   if (d < 3*MAX_DIFF) {
-    if (next_stepwise_target->parent == nullptr) return true;
+    if (next_stepwise_target->parent == nullptr) {
+      *done = true;
+      return command;
+    }
     if (deterministic || !adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
   }
 
-  Config command;
   if (deterministic) {
     double alpha = MAX_DIFF / d;
-    Config line = diff(target, (*current));
+    Config line = diff(target, current_state);
     command = line * alpha;
   }
   else
@@ -43,9 +48,9 @@ bool getNextConfig(Config *current, const GraphNode *path, const Task &task,
     command = mppi.pop(x);
   }
 
-  assert(distanceFrom(command, Config::Zero()) < MAX_DIFF*1.001);
-  *current += command;
-  return false;
+  assert(distanceFrom(command, Config::Zero()) < MAX_COMMAND*1.001);
+  *done = false;
+  return command;
 }
 
 void moveProjectiles(Task &task) {
@@ -71,7 +76,10 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     task.projectiles.push_back({-0.4, 0.4});
   }
 
-  Config current = path->config;
+  StateArrayf current;
+  current *= 0;
+  current.topRows(3) = path->config;
+
   if (!deterministic) {
     next_stepwise_target = graph.nodeForConfig(task.end);
   } else {
@@ -125,7 +133,7 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     for (int i = 0; i < n_trajs; i++) {
       if (i % 20 == 0) {
         StateArrayf x = asdf.X_trajs.block(traj_len-STATE_DIM, i, STATE_DIM, 1);
-        drawConfig(x, sf::Color(255, 0, 0, 8), RENDER_CONFIG_SPACE);
+        drawConfig(x.topRows(3), sf::Color(255, 0, 0, 8), RENDER_CONFIG_SPACE);
       }
     }
     if (!deterministic) {
@@ -137,16 +145,15 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
       if (i % 1 == 0) {
         StateArrayf x = seq.col(i);
         if (i == 0) {
-          drawConfig(x, sf::Color(0, 255, 0, 255), RENDER_CONFIG_SPACE);
+          drawConfig(x.topRows(3), sf::Color(0, 255, 0, 255), RENDER_CONFIG_SPACE);
         } else {
-          drawConfig(x, sf::Color(128, 200, 128, 64), RENDER_CONFIG_SPACE);
+          drawConfig(x.topRows(3), sf::Color(128, 200, 128, 64), RENDER_CONFIG_SPACE);
         }
       }
     }
 
-    Config prev = current;
-    done = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic);
-    path_cost += distanceFrom(prev, current);
+    Config command = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic, &done);
+    path_cost += distanceFrom(command, command*0);
     n_steps += 1;
     if (!deterministic) {
       if (nominal_terminal_node == nullptr) {
@@ -161,8 +168,12 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     doneDrawingStuff();
 
     Config noise = randConfig() * MOTION_NOISE;
-    current = current + noise;
-    if (collides(current, task, BALL_RADIUS/2.0)) {
+    command += noise;
+    current.bottomRows(3) += command;
+    if (SECOND_ORDER) {
+      current.topRows(3) += current.bottomRows(3);
+    }
+    if (collides(current.topRows(3), task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";
       collisions += 1;
     }

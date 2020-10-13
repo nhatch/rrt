@@ -7,8 +7,8 @@
 #include "rrt.h"
 #include "control.h"
 
-#define STATE_DIM 3
-#define CONTROL_DIM 3
+constexpr int STATE_DIM = SECOND_ORDER ? 6 : 3;
+constexpr int CONTROL_DIM = 3;
 
 #define UNKNOWN_PENALTY 3 // somewhat arbitrary small cost
 

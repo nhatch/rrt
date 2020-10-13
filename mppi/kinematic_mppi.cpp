@@ -36,6 +36,7 @@ KinematicMPPI::KinematicMPPI(MPPILocalPlannerConfig &config, const Task &task) :
 
   ControlArrayf stds;
   stds << config.mppi_pos_std, config.mppi_pos_std, config.mppi_th_std;
+  if (SECOND_ORDER) stds /= 3.0;
   if (FULL_COVARIANCE) {
     control_sqrt_cov_ = buildTridiag(stds, config.mppi_precision_superdiag);
     //control_sqrt_cov_wild_ = buildTridiag(0.2f, 0.2f, -5.f);
@@ -183,9 +184,18 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
   X_next.row(1) = X.row(1) + V.row(0)*sin(X.row(2))*dt_;
   X_next.row(2) = X.row(2) + V.row(1)*dt_;
   */
-  X_next.row(0) = X.row(0) + V.row(0);
-  X_next.row(1) = X.row(1) + V.row(1);
-  X_next.row(2) = X.row(2) + V.row(2);
+  if (SECOND_ORDER) {
+    X_next.row(3) = X.row(3) + V.row(0);
+    X_next.row(4) = X.row(4) + V.row(1);
+    X_next.row(5) = X.row(5) + V.row(2);
+    X_next.row(0) = X.row(0) + X.row(3);
+    X_next.row(1) = X.row(1) + X.row(4);
+    X_next.row(2) = X.row(2) + X.row(5);
+  } else {
+    X_next.row(0) = X.row(0) + V.row(0);
+    X_next.row(1) = X.row(1) + V.row(1);
+    X_next.row(2) = X.row(2) + V.row(2);
+  }
   return X_next;
 }
 
@@ -246,7 +256,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
   if (adaptive_carrot) {
     double t_cost;
     StateArrayf x = nominal_traj_.X_trajs.block(0, horizon_, STATE_DIM, 1);
-    const GraphNode *node = graph.nearestNode(x, task_, &t_cost);
+    const GraphNode *node = graph.nearestNode(x.topRows(3), task_, &t_cost);
     if (node != nullptr) {
       goal_ = node->config;
     }
@@ -269,7 +279,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
                        //+ speed_costs_flat
                        //+ exp(-dist2goal_sq_flat/orientation_width_)*yaw_costs_flat
 
-  ArrayXXf posn_errs = states.colwise() - goal_;
+  ArrayXXf posn_errs = states.topRows(3).colwise() - goal_;
   posn_errs.row(2) *= theta_weight_;
   ArrayXf dist2goal_flat = posn_errs.matrix().colwise().norm().array();
   if (NEAREST_NEIGHBOR) {
@@ -280,7 +290,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     costs_flat += dist2goal_flat;
   }
 
-  ArrayXXf controls = reshape(samples.U_trajs, STATE_DIM, (horizon_)*rollouts);
+  ArrayXXf controls = reshape(samples.U_trajs, CONTROL_DIM, (horizon_)*rollouts);
   controls.row(2) *= THETA_WEIGHT;
   ArrayXf control_costs_flat = controls.matrix().colwise().norm().array();
   ArrayXXf costs = reshape(costs_flat, horizon_+1, rollouts);
@@ -292,7 +302,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
       int terminal_state_idx = (i+1)*(horizon_+1) - 1;
       StateArrayf x = states.col(terminal_state_idx);
       double t_cost;
-      const GraphNode *nearest = graph.nearestNode(x, task_, &t_cost);
+      const GraphNode *nearest = graph.nearestNode(x.topRows(3), task_, &t_cost);
       if (rollouts == 1) {
         nominal_terminal_node = nearest;
       }
