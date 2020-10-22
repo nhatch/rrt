@@ -130,7 +130,7 @@ class KinematicMPPI {
      * @brief Sample control trajectories from the current distribution.
      * @return The sampled control trajectories, of size [2*horizon_, rollouts_].
      */
-    ArrayXXf sampleControlTrajs();
+    ArrayXXf sampleControlTrajs(const StateArrayf& state);
 
     /**
      * @brief Rolls out the control trajectories to produce state trajectories.

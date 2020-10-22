@@ -122,12 +122,12 @@ float KinematicMPPI::nominalCost() {
 }
 
 SampledTrajs KinematicMPPI::sampleTrajs(const StateArrayf& state) {
-  ArrayXXf U_trajs = sampleControlTrajs();
+  ArrayXXf U_trajs = sampleControlTrajs(state);
   ArrayXXf X_trajs = rolloutSamples(state, U_trajs);
   return { X_trajs, U_trajs };
 }
 
-ArrayXXf KinematicMPPI::sampleControlTrajs() {
+ArrayXXf KinematicMPPI::sampleControlTrajs(const StateArrayf& state) {
   const int zero_rollouts = rollouts_ / 20;
   const int low_std_rollouts = rollouts_ / 5;
   const int wild_rollouts = rollouts_ / 3;
@@ -142,8 +142,20 @@ ArrayXXf KinematicMPPI::sampleControlTrajs() {
   //    (control_sqrt_cov_wild_ * dU_norm_flat.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts)).array();
   U_trajs.leftCols(rollouts_ - zero_rollouts).colwise() += U_flat;
   //U_trajs.leftCols(1).colwise() = U_flat;
+  U_trajs.rightCols(1) *= 0; // "panic button"
+  if (SECOND_ORDER) {
+    // I happen to know that the maximum speed is three times the maximum acceleration,
+    // so we should always be able to stop within three timesteps.
+    // We might be able to stop faster in some cases, but that would be more complicated
+    // to implement.
+    ControlArrayf stop = -state.bottomRows(3)/3;
+    for (int i = rollouts_-zero_rollouts; i < rollouts_; i++) {
+      for (int j = 0; j < 3; j++) {
+        U_trajs.block(j*CONTROL_DIM, i, CONTROL_DIM, 1) += stop;
+      }
+    }
+  }
   clamp(U_trajs);
-  U_trajs.leftCols(1) *= 0; // "panic button"
   return U_trajs;
 }
 
@@ -191,6 +203,17 @@ StateArrayXf KinematicMPPI::step(const StateArrayXf& X, const ControlArrayXf& U)
     X_next.row(0) = X.row(0) + X.row(3);
     X_next.row(1) = X.row(1) + X.row(4);
     X_next.row(2) = X.row(2) + X.row(5);
+
+    // Copied from stick_mppi.cpp b/c passing a direct ref
+    // to only part of an array was . . . impossible?
+    ArrayXf norm_sq = X_next.row(3)*X_next.row(3) +
+                      X_next.row(4)*X_next.row(4) +
+                      THETA_WEIGHT*THETA_WEIGHT*X_next.row(5)*X_next.row(5);
+    ArrayXf frac = pow(norm_sq, 0.5) / MAX_DIFF;
+    frac = frac.max(1.0);
+    X_next.row(3) /= frac;
+    X_next.row(4) /= frac;
+    X_next.row(5) /= frac;
   } else {
     X_next.row(0) = X.row(0) + V.row(0);
     X_next.row(1) = X.row(1) + V.row(1);

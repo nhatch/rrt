@@ -169,9 +169,15 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
 
     Config noise = randConfig() * MOTION_NOISE;
     command += noise;
-    current.bottomRows(3) += command;
     if (SECOND_ORDER) {
       current.topRows(3) += current.bottomRows(3);
+      current.bottomRows(3) += command;
+      double speed = distanceFrom(current.bottomRows(3), command*0);
+      if (speed > MAX_DIFF) {
+        current.bottomRows(3) *= MAX_DIFF / speed;
+      }
+    } else {
+      current.bottomRows(3) += command;
     }
     if (collides(current.topRows(3), task, BALL_RADIUS/2.0)) {
       std::cout << "YOU DIED!!!!!!\n";

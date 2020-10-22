@@ -6,11 +6,12 @@
 #include "collision.h"
 #include "graphics.h"
 
-constexpr bool SECOND_ORDER = false;
+constexpr bool SECOND_ORDER = true;
 const double CONTROL_HZ = 30;
 const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
-const double MAX_COMMAND = SECOND_ORDER ? MAX_DIFF/3 : MAX_DIFF;
+const double MAX_ACCEL = MAX_DIFF / 3;
+const double MAX_COMMAND = SECOND_ORDER ? MAX_ACCEL : MAX_DIFF;
 
 constexpr bool DYNAMIC_OBSTACLES = true;
 const bool NEAREST_NEIGHBOR = true;
