@@ -306,8 +306,9 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
   costmap.resize(COST_DIM_X, COST_DIM_Y*COST_DIM_TH);
   costmap.fill(0);
 
-  std::string costmap_fname = "costmaps/costmap_" + task_name + "_" + std::to_string(seed) + ".txt";
-  if (!FULL_COSTMAP) costmap_fname = "costmaps/costmap_" + task_name + "_obstacles_only.txt";
+  std::string root = "costmaps/costmap_" + task_name + "_" + std::to_string(LENGTH) + "_";
+  std::string costmap_fname = root + std::to_string(seed) + ".txt";
+  if (!FULL_COSTMAP) costmap_fname = root + "obstacles_only.txt";
   if (arrayExists(costmap_fname))
   {
     loadArray(costmap, costmap_fname);
