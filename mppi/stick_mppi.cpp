@@ -18,6 +18,11 @@ void StickMPPI::clamp(ArrayXXf& U) {
   ArrayXf frac = pow(norm_sq, 0.5) / MAX_COMMAND;
   if (SECOND_ORDER) {
     frac = frac.max(1.0);
+  } else {
+    // For first-order system, we rescale all commands to have maximum size.
+    // Otherwise the robot goes very slowly.
+    // Exception: very tiny commands remain very tiny.
+    frac = frac.max(0.000001);
   }
   U_flat.row(0) /= frac;
   U_flat.row(1) /= frac;
