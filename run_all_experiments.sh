@@ -18,13 +18,13 @@ done
 
 echo
 echo "POINT ROBOT FIRST ORDER"
-gawk -f count.awk final_results_pf.txt
+awk -f count.awk final_results_pf.txt
 echo
 echo "POINT ROBOT SECOND ORDER"
-gawk -f count.awk final_results_ps.txt
+awk -f count.awk final_results_ps.txt
 echo
 echo "STICK ROBOT FIRST ORDER"
-gawk -f count.awk final_results_sf.txt
+awk -f count.awk final_results_sf.txt
 echo
 echo "STICK ROBOT SECOND ORDER"
-gawk -f count.awk final_results_ss.txt
+awk -f count.awk final_results_ss.txt
