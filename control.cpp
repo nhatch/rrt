@@ -190,14 +190,14 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
     total_elapsed_usecs += elapsedUsecs;
-    /*
-    if (desiredUsecs > elapsedUsecs) {
-      usleep(desiredUsecs - elapsedUsecs);
-    } else if (!printedWarning) {
-      printedWarning = true;
-      printf("Warning: can't keep up with control freq (%ld, %ld)\n", desiredUsecs/1000, elapsedUsecs/1000);
+    if (!HEADLESS) {
+      if (desiredUsecs > elapsedUsecs) {
+        usleep(desiredUsecs - elapsedUsecs);
+      } else if (!printedWarning) {
+        printedWarning = true;
+        printf("Warning: can't keep up with control freq (%ld, %ld)\n", desiredUsecs/1000, elapsedUsecs/1000);
+      }
     }
-    */
   }
   printf("Result:\n"
          "  Success:               %d\n"

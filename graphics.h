@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include <Eigen/Core>
 
+extern const bool HEADLESS;
 void drawGraph(const graph_t &graph, const Task &task);
 void drawConfig(const Config &config, sf::Color color = sf::Color::Green, bool point_only = false);
 void doneDrawingStuff();

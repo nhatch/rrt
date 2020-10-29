@@ -9,6 +9,8 @@
 #include "collision.h"
 #include "graphics.h"
 
+extern const bool HEADLESS = true;
+
 void drawConfig(const Config &config, sf::Color color, bool point_only) {
 }
 

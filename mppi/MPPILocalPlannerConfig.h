@@ -3,8 +3,8 @@
 #define _MPPI_CFG_H_
 
 struct MPPILocalPlannerConfig {
-  int mppi_rollouts = 1000;
-  int time_horizon = 20;
+  int mppi_rollouts = 100;
+  int time_horizon = 15;
   int lag = 0;
   int mppi_opt_iters = 1;
   float mppi_orientation_width = 5.;

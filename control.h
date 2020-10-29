@@ -7,7 +7,7 @@
 #include "graphics.h"
 
 constexpr bool SECOND_ORDER = true;
-const double CONTROL_HZ = 30;
+const double CONTROL_HZ = 20;
 const double SPEED = 1.0;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 const double MAX_ACCEL = MAX_DIFF / 3;

@@ -9,6 +9,7 @@
 #include "collision.h"
 #include "graphics.h"
 
+extern const bool HEADLESS = false;
 const int WINDOW_SIDE = 500;
 sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE, WINDOW_SIDE), "RRT visualization");
 const double offset_x = double(WINDOW_SIDE) / 2;
