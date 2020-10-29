@@ -15,7 +15,7 @@
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
-int N_SEEDS = 20;
+int N_SEEDS = 10; // Ideally 30
 int N_REPEATS = 5;
 
 /* Consider the node only, rather than the line from that node to its parents.
@@ -391,13 +391,13 @@ int main(int argc, char *argv[]) {
     task_name = argv[1];
   }
   if (argc > 2) {
-    N_SEEDS = 1;
     std::istringstream ss {argv[2]};
     ss >> seed;
   }
   unsigned int control_seed = seed;
   std::string mode = "all";
   if (argc > 3) {
+    N_SEEDS = 1;
     N_REPEATS = 1;
     std::istringstream ss2 {argv[3]};
     ss2 >> control_seed;
@@ -411,6 +411,10 @@ int main(int argc, char *argv[]) {
     std::cout << "Invalid mode; aborting\n";
     return 2;
   }
+  std::cout << "TASK NAME: " << task_name << std::endl;
+  std::cout << "TASK MODEL IS POINT ROBOT: " << POINT_ROBOT << std::endl;
+  std::cout << "TASK MODEL IS SECOND ORDER: " << SECOND_ORDER << std::endl;
+  std::cout << "TASK INCLUDES DYNAMIC OBSTACLES: " << DYNAMIC_OBSTACLES << std::endl;
   std::cout << "Starting seed: " << seed << std::endl;
   for (int s = 0; s < N_SEEDS; s++) {
     std::cerr << "Starting trial " << s << std::endl;

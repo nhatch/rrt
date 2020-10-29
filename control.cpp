@@ -106,7 +106,7 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     }
   }
 
-  double path_cost = 0.0;
+  double total_cost = 0.0;
   int n_steps = 0;
   int n_steps_lost = 0;
   int n_steps_on_min_graph = 0;
@@ -153,7 +153,7 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     }
 
     Config command = getNextConfig(&current, path, task, graph, mppi, costmap, adaptive_carrot, deterministic, &done);
-    path_cost += distanceFrom(command, command*0);
+    total_cost += distanceFrom(command, command*0);
     n_steps += 1;
     if (!deterministic) {
       if (nominal_terminal_node == nullptr) {
@@ -183,10 +183,17 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
       std::cout << "YOU DIED!!!!!!\n";
       collisions += 1;
     }
+    if (n_steps > 15 * 60) {
+      std::cout << "TIME LIMIT REACHED\n";
+      break;
+    }
+    if (n_steps_lost > 15 * 3) {
+      std::cout << "LOST LIMIT REACHED\n";
+      break;
+    }
 
     gettimeofday(&tp1, NULL);
     long totalElapsedUsecs = (tp1.tv_sec - tp_start.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp_start.tv_usec);
-    if (totalElapsedUsecs > 120 * 1000 * 1000) break; // we've been stuck for two minutes
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
     total_elapsed_usecs += elapsedUsecs;
@@ -201,11 +208,11 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
   }
   printf("Result:\n"
          "  Success:               %d\n"
-         "  Path length:           %f (%d collisions)\n"
+         "  Total cost:            %f (%d collisions)\n"
          "  Control steps:         %d (%d lost)\n"
          "  Min graph steps:       %d\n"
          "  Time per control (us): %ld\n",
-      done, path_cost, collisions,
+      done, total_cost, collisions,
       n_steps, n_steps_lost, n_steps_on_min_graph, total_elapsed_usecs / n_steps);
   std::cout << std::flush;
 }

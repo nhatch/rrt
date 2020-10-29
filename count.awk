@@ -2,7 +2,7 @@ BEGIN { FS = " " }
 /NAIVE/ { mode = "naive" }
 /MPPI \(full\)/ { mode = "full" }
 /MPPI \(min\)/ { mode = "min" }
-/Path length:/ {
+/Total cost:/ {
   if (mode == "naive") naive_path += $3
   if (mode == "full") full_path += $3
   if (mode == "min") min_path += $3
@@ -45,7 +45,7 @@ END {
   print "  " naive_colfree
   print "  " full_colfree
   print "  " min_colfree
-  print "Not stuck:"
+  print "Not stuck or lost:"
   print "  " naive_success
   print "  " full_success
   print "  " min_success
