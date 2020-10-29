@@ -199,7 +199,12 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
   manual_samples.push_back({-0.3, 0.0, 0.0});
   manual_samples.push_back({-0.3, 0.0, M_PI});
   manual_samples.push_back(start);
-  while (iter < MIN_SAMPLES || distanceFrom(start, current->config) > tol) {
+  int found_feasible = -1;
+  GraphNode *feasible = root;
+  // If KEEP_SEARCHING > 1, keep searching a bit after finding a feasible path,
+  // in case there's a better path.
+  constexpr double KEEP_SEARCHING = 1;
+  while (iter < MIN_SAMPLES || found_feasible < 0 || iter < found_feasible*KEEP_SEARCHING) {
     Config c;
     if (MANUAL_GRAPH) {
       c = manual_samples[iter++];
@@ -211,10 +216,14 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
       }
     }
     current = insert(graph, c, task, root);
+    if (distanceFrom(start, current->config) < tol) {
+      feasible = current;
+      if (found_feasible < 0) found_feasible = iter;
+    }
     drawGraph(graph, task);
     doneDrawingStuff();
   }
-  return current;
+  return feasible;
 }
 
 void destroyGraph(graph_t *graph) {
