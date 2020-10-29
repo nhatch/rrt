@@ -247,7 +247,8 @@ const obstacle_t &make_blob(double x, double y, double s) {
   return *blob;
 }
 
-void run_seed(int seed, int control_seed, std::string &mode, std::string& task_name) {
+void run_seed(int seed, int control_seed, std::string &mode, std::string& task_name,
+    bool dynamic_obstacles) {
   set_seed(seed);
 
 
@@ -360,7 +361,7 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     if (!SECOND_ORDER) { // We don't have a naive controller for second-order system
       for (int i = 0; i < N_REPEATS; i++) {
         set_seed(control_seed++);
-        doControl(path, task, costmap, graph, min_graph, false, true);
+        doControl(path, task, costmap, graph, min_graph, false, true, dynamic_obstacles);
       }
     }
   }
@@ -368,14 +369,14 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     std::cout << "MPPI (full)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
-      doControl(path, task, costmap, graph, min_graph, false, false);
+      doControl(path, task, costmap, graph, min_graph, false, false, dynamic_obstacles);
     }
   }
   if (mode == "all" || mode == "mppi_min") {
     std::cout << "MPPI (min)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
-      doControl(path, task, costmap, min_graph, min_graph, false, false);
+      doControl(path, task, costmap, min_graph, min_graph, false, false, dynamic_obstacles);
     }
   }
 
@@ -385,40 +386,53 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
 int main(int argc, char *argv[]) {
   //std::cout.precision(2);
   //std::cout << std::fixed;
-  unsigned int seed = std::time(nullptr) % 100000;
   std::string task_name = "gate";
   if (argc > 1) {
     task_name = argv[1];
-  }
-  if (argc > 2) {
-    std::istringstream ss {argv[2]};
-    ss >> seed;
-  }
-  unsigned int control_seed = seed;
-  std::string mode = "all";
-  if (argc > 3) {
-    N_SEEDS = 1;
-    N_REPEATS = 1;
-    std::istringstream ss2 {argv[3]};
-    ss2 >> control_seed;
-    mode = argv[4];
   }
   if (task_name != "gate" && task_name != "bugtrap" && task_name != "forest" && task_name != "blob") {
     std::cout << "Invalid task name; aborting\n";
     return 1;
   }
-  if (mode != "all" && mode != "naive" && mode != "mppi_full" && mode != "mppi_min") {
-    std::cout << "Invalid mode; aborting\n";
+
+  int dynamic_obstacles = 1;
+  if (argc > 2) {
+    std::istringstream ss {argv[2]};
+    ss >> dynamic_obstacles;
+  }
+  if (dynamic_obstacles != 0 && dynamic_obstacles != 1) {
+    std::cout << "Invalid setting for dynamic_obstaces; aborting\n";
     return 2;
   }
+
+  unsigned int seed = std::time(nullptr) % 100000;
+  if (argc > 3) {
+    std::istringstream ss {argv[3]};
+    ss >> seed;
+  }
+
+  unsigned int control_seed = seed;
+  std::string mode = "all";
+  if (argc > 4) {
+    N_SEEDS = 1;
+    N_REPEATS = 1;
+    std::istringstream ss2 {argv[4]};
+    ss2 >> control_seed;
+    mode = argv[5];
+  }
+  if (mode != "all" && mode != "naive" && mode != "mppi_full" && mode != "mppi_min") {
+    std::cout << "Invalid mode; aborting\n";
+    return 3;
+  }
+
   std::cout << "TASK NAME: " << task_name << std::endl;
   std::cout << "TASK MODEL IS POINT ROBOT: " << POINT_ROBOT << std::endl;
   std::cout << "TASK MODEL IS SECOND ORDER: " << SECOND_ORDER << std::endl;
-  std::cout << "TASK INCLUDES DYNAMIC OBSTACLES: " << DYNAMIC_OBSTACLES << std::endl;
+  std::cout << "TASK INCLUDES DYNAMIC OBSTACLES: " << dynamic_obstacles << std::endl;
   std::cout << "Starting seed: " << seed << std::endl;
   for (int s = 0; s < N_SEEDS; s++) {
     std::cerr << "Starting trial " << s << std::endl;
-    run_seed(seed + 50*s, control_seed, mode, task_name);
+    run_seed(seed + 50*s, control_seed, mode, task_name, dynamic_obstacles);
   }
   return 0;
 }

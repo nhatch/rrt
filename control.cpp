@@ -65,8 +65,8 @@ void moveProjectiles(Task &task) {
   }
 }
 
-void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic) {
-  if (DYNAMIC_OBSTACLES) {
+void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph_t &graph, graph_t &min_graph, bool adaptive_carrot, bool deterministic, bool dynamic_obstacles) {
+  if (dynamic_obstacles) {
     task.projectiles.clear();
     task.projectiles.push_back({0.0, 0.0});
     task.projectiles.push_back({0.8, 0.0});
