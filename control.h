@@ -8,7 +8,7 @@
 
 constexpr bool SECOND_ORDER = true;
 const double CONTROL_HZ = 20;
-const double SPEED = 1.0;
+const double SPEED = 0.7;
 const double MAX_DIFF = SPEED / CONTROL_HZ;
 const double MAX_ACCEL = MAX_DIFF / 3;
 const double MAX_COMMAND = SECOND_ORDER ? MAX_ACCEL : MAX_DIFF;

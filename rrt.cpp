@@ -189,7 +189,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
   return existingNode;
 }
 
-GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=ETA*2) {
+GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=ETA) {
   GraphNode * const root = graph.nodeForConfig(task.end);
   GraphNode *current = root;
   int iter = 0;
@@ -430,9 +430,11 @@ int main(int argc, char *argv[]) {
   std::cout << "TASK MODEL IS SECOND ORDER: " << SECOND_ORDER << std::endl;
   std::cout << "TASK INCLUDES DYNAMIC OBSTACLES: " << dynamic_obstacles << std::endl;
   std::cout << "Starting seed: " << seed << std::endl;
+  std::cerr << "Running " << N_SEEDS << " trials ";
   for (int s = 0; s < N_SEEDS; s++) {
-    std::cerr << "Starting trial " << s << std::endl;
+    std::cerr << ".";
     run_seed(seed + 50*s, control_seed, mode, task_name, dynamic_obstacles);
   }
+  std::cerr << std::endl;
   return 0;
 }
