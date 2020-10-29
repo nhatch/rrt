@@ -58,6 +58,9 @@ void moveProjectiles(Task &task) {
     p.velocity *= 0.95;
     p.velocity(0) += (randf()-0.5) * 0.01;
     p.velocity(1) += (randf()-0.5) * 0.01;
+    double speed = p.velocity.matrix().norm();
+    double max_speed = 0.2 * MAX_DIFF;
+    if (speed > max_speed) p.velocity *= max_speed / speed;
     p.location += p.velocity;
   }
 }
