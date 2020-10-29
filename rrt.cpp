@@ -96,7 +96,7 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
       if (d < min_dist) {
         min_dist = d;
         existingNode = node;
-        if (min_dist < ETA) return existingNode; // too close to existing graph, not useful
+        //if (min_dist < ETA) return existingNode; // too close to existing graph, not useful
         //bestSplitConfig = splitConfig;
         //bestNeedsSplitNode = needsSplitNode;
       }
@@ -140,7 +140,12 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
     double gamma_rrt = 4.4; // roughly, I calculate mu(xfree) < mu(x) ~= 34
     double N = graph.size() + 1;
     rrt_star_rad = gamma_rrt * pow(log(N)/N, 0.33);
-    if (rrt_star_rad > ETA) rrt_star_rad = ETA;
+    constexpr double ETA_TWIDDLE = ETA * 1.000001; // Handle floating point weirdness during steering
+    if (rrt_star_rad > ETA_TWIDDLE) rrt_star_rad = ETA_TWIDDLE;
+    // I DUNNO MAN, seems weird to me that once the search radius is smaller than ETA,
+    // we'll only connect new vertices if they happen to be sampled near the graph
+    // that we already built.
+    //rrt_star_rad = ETA_TWIDDLE;
     //std::cout << "RRT radius: " << rrt_star_rad << std::endl;
     std::vector<int> buckets_to_check({});
     graph.getBucketsAsList(steered, buckets_to_check);

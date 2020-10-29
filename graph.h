@@ -5,9 +5,9 @@
 #include <vector>
 #include "config.h"
 
-const bool MANUAL_GRAPH = false;
-const double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
-const double MAX_COST = 10.0; // Optimal path cost is something like 4.3
+constexpr bool MANUAL_GRAPH = false;
+constexpr double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
+constexpr double MAX_COST = 10.0; // Optimal path cost is something like 4.3
 
 using obstacle_t = std::vector<point2d_t>;
 struct projectile_t {
