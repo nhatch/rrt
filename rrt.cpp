@@ -288,8 +288,8 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     obstacles.push_back(make_blob(0.6,-0.3,s));
     obstacles.push_back(make_blob(-0.1,-0.4,s));
     obstacles.push_back(make_blob(-0.2,0.5,s));
-    obstacles.push_back(make_blob(-0.3,0.6,s));
-    obstacles.push_back(make_blob(-0.4,-0.3,s));
+    obstacles.push_back(make_blob(-0.4,0.6,s));
+    obstacles.push_back(make_blob(-0.5,-0.3,s));
     obstacles.push_back(make_blob(-0.5,0.0,s));
     // Can break here for sparse forest
     obstacles.push_back(make_blob(-0.3,-0.4,s));
@@ -300,7 +300,7 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     obstacles.push_back(make_blob(0.3,-0.5,s));
     obstacles.push_back(make_blob(-0.4,-0.8,s));
     obstacles.push_back(make_blob(-0.5,0.2,s));
-    obstacles.push_back(make_blob(-0.6,0.3,s));
+    obstacles.push_back(make_blob(-0.7,0.3,s));
     obstacles.push_back(make_blob(-0.7,-0.5,s));
   }
   else if (task_name == "blob")
