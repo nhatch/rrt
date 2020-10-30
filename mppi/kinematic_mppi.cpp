@@ -266,6 +266,7 @@ ArrayXf KinematicMPPI::computeCost(SampledTrajs& samples, const ArrayXXb &costma
     }
     balls += LENGTH/(n_tests-1) * directions;
   }
+  dynamic_lethal *= 1000;
 
   if (adaptive_carrot) {
     double t_cost;

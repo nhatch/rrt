@@ -102,7 +102,7 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
   mppi.setGoal(goal);
 
   maps_t renders({});
-  sf::Texture task_space_render = render(min_graph, task);
+  sf::Texture task_space_render = render(graph, task);
   if (RENDER_CONFIG_SPACE) {
     for (int i = 0; i < COST_DIM_TH; i++) {
       renders.push_back(render(costmap, i));
@@ -181,11 +181,11 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
       std::cout << "YOU DIED!!!!!!\n";
       collisions += 1;
     }
-    if (n_steps > 15 * 60) {
+    if (n_steps > 15 * 120) {
       std::cout << "TIME LIMIT REACHED\n";
       break;
     }
-    if (n_steps_lost > 15 * 3) {
+    if (n_steps_lost > 15 * 5) {
       std::cout << "LOST LIMIT REACHED\n";
       break;
     }

@@ -350,7 +350,7 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
           c <<     (i+0.5)*COST_RESOLUTION_XY + MIN_X,
                    (j+0.5)*COST_RESOLUTION_XY + MIN_Y,
                    k*COST_RESOLUTION_TH;
-          if (collides(c, task, BALL_RADIUS)) {
+          if (collides(c, task, 1.2*BALL_RADIUS)) {
             costmap(i, j*COST_DIM_TH + k) = 255;
           } else if (FULL_COSTMAP) {
             double min_cost;
