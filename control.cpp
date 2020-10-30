@@ -18,22 +18,22 @@ const GraphNode *next_stepwise_target;
 Config getNextConfig(StateArrayf *current, const GraphNode *path, const Task &task,
     const graph_t &graph, KinematicMPPI& mppi, const ArrayXXb& costmap, bool adaptive_carrot, bool deterministic, bool *done) {
 
-  Config target = next_stepwise_target->config;
   Eigen::Array<float,3,1> current_state = current->topRows(3);
-  double d = distanceFrom(current_state, target);
+  double d = distanceFrom(current_state, next_stepwise_target->config);
   Config command;
   command *= 0;
-  if (d < 3*MAX_DIFF) {
+  while (d < 3*MAX_DIFF) {
     if (next_stepwise_target->parent == nullptr) {
       *done = true;
       return command;
     }
-    if (deterministic || !adaptive_carrot) next_stepwise_target = next_stepwise_target->parent;
+    next_stepwise_target = next_stepwise_target->parent;
+    d = distanceFrom(current_state, next_stepwise_target->config);
   }
 
   if (deterministic) {
     double alpha = MAX_DIFF / d;
-    Config line = diff(target, current_state);
+    Config line = diff(next_stepwise_target->config, current_state);
     command = line * alpha;
   }
   else
@@ -41,7 +41,7 @@ Config getNextConfig(StateArrayf *current, const GraphNode *path, const Task &ta
     StateArrayf x = *current;
 
     if (!adaptive_carrot) {
-      mppi.setGoal(target);
+      mppi.setGoal(next_stepwise_target->config);
     }
 
     mppi.optimize(x, costmap, graph, adaptive_carrot, task);
