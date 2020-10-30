@@ -7,7 +7,11 @@
 
 constexpr bool MANUAL_GRAPH = false;
 constexpr double ETA = MANUAL_GRAPH ? 10.0 : 0.1;
-constexpr double MAX_COST = 10.0; // Optimal path cost is something like 4.3
+// Optimal path cost for 'gate' is something like 4.3, but
+// for 'bugtrap' the planner sometimes returns paths of cost > 10.
+// The disadvantage of large MAX_COST is decreased resolution for
+// building the costmap when FULL_COSTMAP is true.
+constexpr double MAX_COST = 100.0;
 
 using obstacle_t = std::vector<point2d_t>;
 struct projectile_t {

@@ -89,7 +89,7 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     next_stepwise_target = path;
   }
   bool done = false;
-  struct timeval tp0, tp1, tp_start;
+  struct timeval tp0, tp1;
   double secsPerFrame = 1/CONTROL_HZ;
 
   MPPILocalPlannerConfig mppi_config;
@@ -116,7 +116,6 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
   int collisions = 0;
   long total_elapsed_usecs = 0;
   bool printedWarning = false;
-  gettimeofday(&tp_start, NULL);
   while (!done) {
     gettimeofday(&tp0, NULL);
     moveProjectiles(task);
@@ -196,7 +195,6 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
     }
 
     gettimeofday(&tp1, NULL);
-    long totalElapsedUsecs = (tp1.tv_sec - tp_start.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp_start.tv_usec);
     long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
     long desiredUsecs = secsPerFrame * 1000 * 1000;
     total_elapsed_usecs += elapsedUsecs;

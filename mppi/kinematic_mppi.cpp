@@ -129,19 +129,10 @@ SampledTrajs KinematicMPPI::sampleTrajs(const StateArrayf& state) {
 
 ArrayXXf KinematicMPPI::sampleControlTrajs(const StateArrayf& state) {
   const int zero_rollouts = rollouts_ / 20;
-  const int low_std_rollouts = rollouts_ / 5;
-  const int wild_rollouts = rollouts_ / 3;
   MatrixXf dU_norm_flat = MatrixXf::NullaryExpr(CONTROL_DIM*sample_horizon_, rollouts_, randN_);
   ArrayXXf U_trajs = (control_sqrt_cov_ * dU_norm_flat).array();
   ArrayXf U_flat = reshape(U_, CONTROL_DIM*sample_horizon_);
-  //U_trajs.leftCols(low_std_rollouts) /= 5.0;
-  // Use control_sqrt_cov_wild_ to generate the next `wild_rollouts` samples
-  // TODO: Why, after MPPI finds a good rollout using the wild rollouts, does it sometimes snap
-  // back to a worse local minimum?
-  //U_trajs.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts) =
-  //    (control_sqrt_cov_wild_ * dU_norm_flat.block(0, low_std_rollouts, CONTROL_DIM*sample_horizon_, wild_rollouts)).array();
   U_trajs.leftCols(rollouts_ - zero_rollouts).colwise() += U_flat;
-  //U_trajs.leftCols(1).colwise() = U_flat;
   U_trajs.rightCols(1) *= 0; // "panic button"
   if (SECOND_ORDER) {
     // I happen to know that the maximum speed is three times the maximum acceleration,

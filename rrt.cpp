@@ -2,6 +2,8 @@
 #include <sstream>
 #include <limits>
 #include <ctime>
+#include <sys/time.h>
+#include <unistd.h>
 #include <math.h>
 
 #include "config.h"
@@ -189,7 +191,9 @@ GraphNode *insert(graph_t &graph, const Config &config, const Task &task, GraphN
   return existingNode;
 }
 
-GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=ETA) {
+GraphNode *search(const Config &start, graph_t &graph, const Task &task, double tol=ETA/10) {
+  struct timeval tp0, tp1, tp_start;
+  gettimeofday(&tp0, NULL);
   GraphNode * const root = graph.nodeForConfig(task.end);
   GraphNode *current = root;
   int iter = 0;
@@ -223,6 +227,10 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
     drawGraph(graph, task);
     doneDrawingStuff();
   }
+  gettimeofday(&tp1, NULL);
+  long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
+  std::cout << "Found feasible path of length " << feasible->cost <<
+    " in " << elapsedUsecs/1000.0 << " ms"<< std::endl;
   return feasible;
 }
 
