@@ -138,10 +138,6 @@ void doControl(const GraphNode *path, Task &task, const ArrayXXb& costmap, graph
         drawConfig(x.topRows(3), sf::Color(255, 0, 0, 8), RENDER_CONFIG_SPACE);
       }
     }
-    if (!deterministic) {
-      drawConfig(mppi.goal_, sf::Color(0, 0, 255, 255), RENDER_CONFIG_SPACE);
-      drawConfig(mppi.nearest_, sf::Color(255, 0, 255, 255), RENDER_CONFIG_SPACE);
-    }
     StateArrayXf seq = mppi.rolloutNominalSeq(x);
     for (int i = seq.cols()-1; i >= 0; i--) {
       if (i % 1 == 0) {
