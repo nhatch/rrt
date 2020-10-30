@@ -357,7 +357,7 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
   std::cout << "done.\n";
 
   if (mode == "all" || mode == "naive") {
-    std::cout << "NAIVE\n";
+    std::cout << "Planning seed " << seed << " TASK " << task_name << ": NAIVE\n";
     if (!SECOND_ORDER) { // We don't have a naive controller for second-order system
       for (int i = 0; i < N_REPEATS; i++) {
         set_seed(control_seed++);
@@ -366,14 +366,14 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     }
   }
   if (mode == "all" || mode == "mppi_full") {
-    std::cout << "MPPI (full)\n";
+    std::cout << "Planning seed " << seed << " TASK " << task_name << ": MPPI (full)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
       doControl(path, task, costmap, graph, min_graph, false, false, dynamic_obstacles);
     }
   }
   if (mode == "all" || mode == "mppi_min") {
-    std::cout << "MPPI (min)\n";
+    std::cout << "Planning seed " << seed << " TASK " << task_name << ": MPPI (min)\n";
     for (int i = 0; i < N_REPEATS; i++) {
       set_seed(control_seed++);
       doControl(path, task, costmap, min_graph, min_graph, false, false, dynamic_obstacles);
