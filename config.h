@@ -18,7 +18,7 @@ constexpr double PROJECTILE_RADIUS = 0.05;
 
 // For the default obstacle setup, large THETA_WEIGHT (e.g. 3)
 // tends to solve the problem faster.
-constexpr double THETA_WEIGHT = POINT_ROBOT ? 0.0 : 0.85;
+constexpr double THETA_WEIGHT = POINT_ROBOT ? 0.0 : 0.4;
 
 using point2d_t = std::array<double,2>;
 using balls_t = std::array<point2d_t,N_BALLS>;
