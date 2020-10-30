@@ -75,7 +75,7 @@ void drawConfig(const Config &config, sf::Color color, bool point_only) {
 
 void drawTask(const Task &task) {
   drawConfig(task.start, sf::Color::Blue);
-  drawConfig(task.end, sf::Color::Blue);
+  drawConfig(task.end, sf::Color(255,0,255,255));
   for (obstacle_t obs : task.obstacles) {
     sf::ConvexShape shape;
     shape.setPointCount(obs.size());
