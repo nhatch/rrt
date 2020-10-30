@@ -207,7 +207,7 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
   GraphNode *feasible = root;
   // If KEEP_SEARCHING > 1, keep searching a bit after finding a feasible path,
   // in case there's a better path.
-  constexpr double KEEP_SEARCHING = 1;
+  constexpr double KEEP_SEARCHING = 1.5;
   while (iter < MIN_SAMPLES || found_feasible < 0 || iter < found_feasible*KEEP_SEARCHING) {
     Config c;
     if (MANUAL_GRAPH) {
@@ -230,7 +230,7 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
   gettimeofday(&tp1, NULL);
   long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
   std::cout << "Found feasible path of length " << feasible->cost <<
-    " in " << elapsedUsecs/1000.0 << " ms"<< std::endl;
+    " in " << elapsedUsecs/1000.0 << " ms (" << iter << " iters)" << std::endl;
   return feasible;
 }
 

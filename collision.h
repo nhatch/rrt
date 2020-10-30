@@ -4,9 +4,9 @@
 #include "config.h"
 #include "graph.h"
 
-constexpr int COST_DIM_X = 64;
-constexpr int COST_DIM_Y = 64;
-constexpr int COST_DIM_TH = 64;
+constexpr int COST_DIM_X = 128;
+constexpr int COST_DIM_Y = 128;
+constexpr int COST_DIM_TH = 128;
 constexpr double COST_RESOLUTION_XY = (MAX_X-MIN_X)/COST_DIM_X;
 constexpr double COST_RESOLUTION_TH = 2*M_PI / COST_DIM_TH;
 
