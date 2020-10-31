@@ -2,4 +2,5 @@
 *.out
 *.swp
 *costmap*.txt*
-results.txt
+*results*.txt
+means.txt

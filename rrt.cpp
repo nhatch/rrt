@@ -17,7 +17,7 @@
 const bool PLAIN_RRT = MANUAL_GRAPH || false;
 double rrt_star_rad = ETA;
 const int MIN_SAMPLES = 1;
-int N_SEEDS = 10; // Ideally 30
+int N_SEEDS = 50;
 int N_REPEATS = 5;
 
 /* Consider the node only, rather than the line from that node to its parents.
