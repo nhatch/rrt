@@ -1,14 +1,9 @@
 #!/bin/bash
 
 echo
-echo "POINT ROBOT FIRST ORDER"
-awk -f count.awk final_results_pf.txt
+cat final_results_all.txt | awk -f awk_scripts/static_setup.awk -f awk_scripts/count.awk -f awk_scripts/static_means.awk > means.txt
+cat means.txt final_results_all.txt | awk -f awk_scripts/static_setup.awk -f awk_scripts/count.awk -f awk_scripts/static_latex.awk
+
 echo
-echo "POINT ROBOT SECOND ORDER"
-awk -f count.awk final_results_ps.txt
-echo
-echo "STICK ROBOT FIRST ORDER"
-awk -f count.awk final_results_sf.txt
-echo
-echo "STICK ROBOT SECOND ORDER"
-awk -f count.awk final_results_ss.txt
+cat final_results_all.txt | awk -f awk_scripts/dynamic_setup.awk -f awk_scripts/count.awk -f awk_scripts/dynamic_means.awk > means.txt
+cat means.txt final_results_all.txt | awk -f awk_scripts/dynamic_setup.awk -f awk_scripts/count.awk -f awk_scripts/dynamic_latex.awk
