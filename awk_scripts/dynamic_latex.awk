@@ -42,10 +42,10 @@ END {
     }
   }
   if (human_readable == 0) {
-    rowhead_format["first","static"] = "First \\\\ Static"
-    rowhead_format["first","dynamic"] = "First \\\\ Dynamic"
-    rowhead_format["second","static"] = "Second \\\\ Static"
-    rowhead_format["second","dynamic"] = "Second \\\\ Dynamic"
+    rowhead_format["first","static"] = "First / \\\\ Static"
+    rowhead_format["first","dynamic"] = "First / \\\\ Dynamic"
+    rowhead_format["second","static"] = "Second / \\\\ Static"
+    rowhead_format["second","dynamic"] = "Second / \\\\ Dynamic"
     mode_format["min"] = "\\texttt{min:~~}"
     mode_format["full"] = "\\\\ \\texttt{full:~}"
     for (o in orders) {
