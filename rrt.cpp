@@ -226,6 +226,21 @@ GraphNode *search(const Config &start, graph_t &graph, const Task &task, double 
     }
     drawGraph(graph, task);
     doneDrawingStuff();
+    if (iter == 1 || iter == found_feasible || (found_feasible > 0 && iter >= found_feasible*KEEP_SEARCHING)) {
+      if (found_feasible > 0 && iter > found_feasible) {
+        // Show full graph for a second
+        usleep(1000*1000*1);
+      }
+      graph_t min_graph;
+      GraphNode *curr = feasible;
+      while (curr != nullptr) {
+        min_graph.insert(curr);
+        curr = curr->parent;
+      }
+      drawGraph(min_graph, task);
+      doneDrawingStuff();
+      usleep(1000*1000*2);
+    }
   }
   gettimeofday(&tp1, NULL);
   long elapsedUsecs = (tp1.tv_sec - tp0.tv_sec) * 1000 * 1000 + (tp1.tv_usec - tp0.tv_usec);
@@ -369,7 +384,7 @@ void run_seed(int seed, int control_seed, std::string &mode, std::string& task_n
     if (!SECOND_ORDER) { // We don't have a naive controller for second-order system
       for (int i = 0; i < N_REPEATS; i++) {
         set_seed(control_seed++);
-        doControl(path, task, costmap, graph, min_graph, false, true, dynamic_obstacles);
+        doControl(path, task, costmap, min_graph, min_graph, false, true, dynamic_obstacles);
       }
     }
   }
